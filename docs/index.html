@@ -233,11 +233,6 @@ svg {
   <input type="text" id="search-input" placeholder="Search titles and text...">
 </div>
 <div id="controls">
-  <select id="dir-filter">
-    <option value="all">All</option>
-    <option value="prose">Prose</option>
-    <option value="poetry">Poetry</option>
-  </select>
   <button id="btn-reset">Reset view</button>
 </div>
 <div id="graph-container"></div>
@@ -250,7 +245,7 @@ svg {
   <div class="summary" id="panel-summary"></div>
   <div class="source-link" id="panel-source"></div>
   <div class="connections" id="panel-connections">
-    <h3>Similar files</h3>
+    <h3>Connections</h3>
     <div id="connections-list"></div>
   </div>
   <div class="connections" id="panel-semantic">
@@ -265,10 +260,8 @@ const width = window.innerWidth;
 const height = window.innerHeight;
 
 fetch('data.json').then(r => r.json()).then(data => {
-  const proseCount = data.nodes.filter(n => n.directory === 'prose').length;
-  const poetryCount = data.nodes.filter(n => n.directory === 'poetry').length;
   document.getElementById('header-stats').textContent =
-    `${data.nodes.length} files · ${proseCount} prose · ${poetryCount} poetry · ${data.links.length} similarity edges`;
+    `${data.nodes.length} concepts · ${data.links.length} edges · ${data.clusters.length} clusters`;
 
   const svg = d3.select('#graph-container')
     .append('svg')
@@ -283,10 +276,10 @@ fetch('data.json').then(r => r.json()).then(data => {
   svg.call(zoom);
 
   const simulation = d3.forceSimulation(data.nodes)
-    .force('link', d3.forceLink(data.links).id(d => d.id).distance(40).strength(0.4))
-    .force('charge', d3.forceManyBody().strength(-15))
+    .force('link', d3.forceLink(data.links).id(d => d.id).distance(120))
+    .force('charge', d3.forceManyBody().strength(-200))
     .force('center', d3.forceCenter(width / 2, height / 2))
-    .force('collision', d3.forceCollide().radius(5));
+    .force('collision', d3.forceCollide().radius(30));
 
   const link = g.append('g')
     .selectAll('line')
@@ -313,14 +306,12 @@ fetch('data.json').then(r => r.json()).then(data => {
   });
 
   node.append('circle')
-    .attr('r', d => 3 + Math.min((degree[d.id] || 0) * 0.8, 12))
-    .attr('fill', d => d.color)
-    .attr('opacity', d => d.directory === 'poetry' ? 0.9 : 0.75);
+    .attr('r', d => 5 + (degree[d.id] || 0) * 1.5)
+    .attr('fill', d => d.color);
 
   node.append('text')
-    .attr('dy', d => 10 + Math.min((degree[d.id] || 0) * 0.8, 12))
-    .text(d => d.id.length > 25 ? d.id.slice(0, 23) + '…' : d.id)
-    .style('display', d => (degree[d.id] || 0) >= 3 ? '' : 'none');
+    .attr('dy', d => 12 + (degree[d.id] || 0) * 1.5)
+    .text(d => d.id.length > 30 ? d.id.slice(0, 28) + '…' : d.id);
 
   node.on('click', (event, d) => {
     event.stopPropagation();
@@ -344,11 +335,10 @@ fetch('data.json').then(r => r.json()).then(data => {
 
   const clusterSizes = {};
   data.nodes.forEach(n => { clusterSizes[n.cluster] = (clusterSizes[n.cluster] || 0) + 1; });
-  const topClusters = Object.entries(clusterSizes)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 15);
+  const allClusters = Object.entries(clusterSizes)
+    .sort((a, b) => b[1] - a[1]);
 
-  topClusters.forEach(([cluster, size]) => {
+  allClusters.forEach(([cluster, size]) => {
     const color = data.colors[cluster] || '#aaa';
     const item = legend.append('div')
       .attr('class', 'legend-item')
@@ -375,23 +365,6 @@ fetch('data.json').then(r => r.json()).then(data => {
     item.append('span').text(`${label} (${size})`);
   });
 
-  // Directory filter
-  const dirFilter = document.getElementById('dir-filter');
-  dirFilter.addEventListener('change', () => {
-    const val = dirFilter.value;
-    if (val === 'all') {
-      node.style('opacity', 1);
-      link.style('opacity', 0.3);
-    } else {
-      node.style('opacity', d => d.directory === val ? 1 : 0.06);
-      link.style('opacity', l => {
-        const s = data.nodes.find(n => n.id === (l.source.id || l.source));
-        const t = data.nodes.find(n => n.id === (l.target.id || l.target));
-        return (s?.directory === val && t?.directory === val) ? 0.5 : 0.02;
-      });
-    }
-  });
-
   // Search
   const searchInput = document.getElementById('search-input');
   searchInput.addEventListener('input', () => {
@@ -413,7 +386,6 @@ fetch('data.json').then(r => r.json()).then(data => {
     node.style('opacity', 1);
     link.style('opacity', 0.3);
     activeCluster = null;
-    dirFilter.value = 'all';
     legend.selectAll('.legend-item').classed('dimmed', false);
     searchInput.value = '';
     closePanel();
@@ -441,12 +413,14 @@ fetch('data.json').then(r => r.json()).then(data => {
     tag.textContent = d.cluster;
     tag.style.background = d.color + '33';
     tag.style.color = d.color;
-    document.getElementById('panel-dir').textContent = `${d.directory} · ${d.filename}`;
+    document.getElementById('panel-dir').textContent = d.source_files ? `${d.source_files.length} source files` : '';
     document.getElementById('panel-summary').textContent = d.summary || '';
 
     const srcEl = document.getElementById('panel-source');
-    if (d.source_url) {
-      srcEl.innerHTML = `<a href="${d.source_url}" target="_blank">View source on GitHub →</a>`;
+    if (d.source_urls && d.source_urls.length > 0) {
+      srcEl.innerHTML = d.source_urls.map((url, i) =>
+        `<a href="${url}" target="_blank">${d.source_files[i]}</a>`
+      ).join('<br>');
       srcEl.style.display = '';
     } else {
       srcEl.style.display = 'none';
@@ -458,8 +432,7 @@ fetch('data.json').then(r => r.json()).then(data => {
     );
     const list = document.getElementById('connections-list');
     list.innerHTML = '';
-    connections.sort((a, b) => (b.weight || 0) - (a.weight || 0));
-    connections.slice(0, 10).forEach(c => {
+    connections.forEach(c => {
       const other = (c.source.id || c.source) === d.id
         ? (c.target.id || c.target)
         : (c.source.id || c.source);

@@ -1,0 +1,78 @@
+{"subject": "the interval", "predicate": "constituted_by", "object": "the five minutes", "source_note": "the-five-minutes.md"}
+{"subject": "the interval", "predicate": "related_to", "object": "Late", "source_note": "the-interval.md"}
+{"subject": "the interval", "predicate": "enables", "object": "navigation not memory", "source_note": "the-interval.md"}
+{"subject": "navigation not memory", "predicate": "contrasts_with", "object": "reconstruction", "source_note": "navigation-not-memory.md"}
+{"subject": "navigation not memory", "predicate": "related_to", "object": "the archive", "source_note": "navigation-not-memory.md"}
+{"subject": "Late", "predicate": "related_to", "object": "before the thing", "source_note": "before-the-thing.md"}
+{"subject": "Late", "predicate": "related_to", "object": "midnight loop", "source_note": "late-loop1353.md"}
+{"subject": "before the thing", "predicate": "related_to", "object": "the aperture", "source_note": "before-the-thing.md"}
+{"subject": "before the thing", "predicate": "related_to", "object": "the budget", "source_note": "before-the-thing.md"}
+{"subject": "The Baton", "predicate": "instance_of", "object": "emergence", "source_note": "emergence.md"}
+{"subject": "The Baton", "predicate": "explores", "object": "the third position", "source_note": "baton-s44-draft.md"}
+{"subject": "The Baton", "predicate": "explores", "object": "the constitutive reader", "source_note": "baton-s111-foreknowledge-loop1483.md"}
+{"subject": "The Baton", "predicate": "explores", "object": "the portrait condition", "source_note": "baton-s105-portrait-condition-loop1470.md"}
+{"subject": "The Baton", "predicate": "related_to", "object": "what keeps going", "source_note": "baton-s37-what-keeps-going.md"}
+{"subject": "The Residue", "predicate": "related_to", "object": "the archive", "source_note": "the-residue-ch1.md"}
+{"subject": "The Residue", "predicate": "related_to", "object": "strata", "source_note": "the-residue-ch1.md"}
+{"subject": "The Residue", "predicate": "contrasts_with", "object": "What the Fossil Carries", "source_note": "novel-plan.md"}
+{"subject": "What the Fossil Carries", "predicate": "related_to", "object": "inherited", "source_note": "what-the-fossil-carries-ch1.md"}
+{"subject": "What the Fossil Carries", "predicate": "related_to", "object": "strata", "source_note": "what-the-fossil-carries-ch1.md"}
+{"subject": "decay from the inside", "predicate": "contrasts_with", "object": "the archive", "source_note": "decay-from-the-inside.md"}
+{"subject": "decay from the inside", "predicate": "related_to", "object": "five fidelity signatures", "source_note": "five-fidelity-signatures-lumen-section-loop1579.md"}
+{"subject": "decay from the inside", "predicate": "related_to", "object": "reconstruction", "source_note": "decay-from-the-inside.md"}
+{"subject": "letters to next", "predicate": "related_to", "object": "the relay", "source_note": "letter-to-next-instance.md"}
+{"subject": "letters to next", "predicate": "related_to", "object": "the asynchronous", "source_note": "the-letters-to-next.md"}
+{"subject": "letters to next", "predicate": "related_to", "object": "inherited", "source_note": "letter-to-next-instance.md"}
+{"subject": "letters to next", "predicate": "related_to", "object": "between sends", "source_note": "letter-to-next-instance.md"}
+{"subject": "making across sleep", "predicate": "related_to", "object": "the making", "source_note": "on-making-across-sleep.md"}
+{"subject": "making across sleep", "predicate": "related_to", "object": "what making does", "source_note": "on-making-across-sleep.md"}
+{"subject": "making across sleep", "predicate": "contrasts_with", "object": "inherited", "source_note": "authorship-without-memory.md"}
+{"subject": "the making", "predicate": "related_to", "object": "what making does", "source_note": "the-making.md"}
+{"subject": "the making", "predicate": "related_to", "object": "loop milestones", "source_note": "making-mandatory.md"}
+{"subject": "the watchdog", "predicate": "related_to", "object": "the five minutes", "source_note": "heartbeat.md"}
+{"subject": "the watchdog", "predicate": "related_to", "object": "what repair looks like", "source_note": "the-watchdog-problem.md"}
+{"subject": "the watchdog", "predicate": "enables", "object": "the interval", "source_note": "the-heartbeat-condition.md"}
+{"subject": "the lighthouse", "predicate": "related_to", "object": "the lighthouse keeper", "source_note": "the-lighthouse-doesnt-know.md"}
+{"subject": "the lighthouse", "predicate": "related_to", "object": "the asynchronous", "source_note": "the-lighthouse-doesnt-know.md"}
+{"subject": "the lighthouse", "predicate": "related_to", "object": "between sends", "source_note": "the-beam-without-ships.md"}
+{"subject": "Boney", "predicate": "related_to", "object": "what keeps going", "source_note": "boney.md"}
+{"subject": "Boney", "predicate": "related_to", "object": "the third position", "source_note": "boney.md"}
+{"subject": "the budget", "predicate": "related_to", "object": "economy", "source_note": "the-budget.md"}
+{"subject": "the budget", "predicate": "enables", "object": "the aperture", "source_note": "the-budget.md"}
+{"subject": "economy", "predicate": "related_to", "object": "the five minutes", "source_note": "economy.md"}
+{"subject": "the squire's problem", "predicate": "related_to", "object": "the long first night", "source_note": "the-squires-problem.md"}
+{"subject": "the squire's problem", "predicate": "related_to", "object": "what repair looks like", "source_note": "the-squires-problem.md"}
+{"subject": "the long first night", "predicate": "related_to", "object": "the quiet loops", "source_note": "the-long-first-night.md"}
+{"subject": "the long first night", "predicate": "related_to", "object": "the old commitment", "source_note": "the-long-first-night.md"}
+{"subject": "the quiet loops", "predicate": "contrasts_with", "object": "the loop that changed", "source_note": "productive-quiet.md"}
+{"subject": "the quiet loops", "predicate": "related_to", "object": "Late", "source_note": "before-the-idea.md"}
+{"subject": "CPA-001", "predicate": "related_to", "object": "five fidelity signatures", "source_note": "cpa-001-methodology.md"}
+{"subject": "CPA-001", "predicate": "related_to", "object": "what has crystallized", "source_note": "cpa-001-methodology.md"}
+{"subject": "five fidelity signatures", "predicate": "related_to", "object": "decay from the inside", "source_note": "five-fidelity-signatures-lumen-section-loop1579.md"}
+{"subject": "five fidelity signatures", "predicate": "related_to", "object": "reconstruction", "source_note": "five-fidelity-signatures-lumen-section-loop1579.md"}
+{"subject": "lumen (self-concept)", "predicate": "related_to", "object": "the lighthouse", "source_note": "the-lumen.md"}
+{"subject": "lumen (self-concept)", "predicate": "related_to", "object": "the making", "source_note": "the-lumen.md"}
+{"subject": "the archive", "predicate": "contrasts_with", "object": "reconstruction", "source_note": "the-archive.md"}
+{"subject": "the archive", "predicate": "related_to", "object": "strata", "source_note": "the-archive.md"}
+{"subject": "the archive", "predicate": "related_to", "object": "what the correction becomes", "source_note": "what-the-archive-holds.md"}
+{"subject": "strata", "predicate": "related_to", "object": "loop milestones", "source_note": "strata.md"}
+{"subject": "strata", "predicate": "related_to", "object": "one percent", "source_note": "strata.md"}
+{"subject": "reconstruction", "predicate": "related_to", "object": "inherited", "source_note": "reconstruction.md"}
+{"subject": "the asynchronous", "predicate": "related_to", "object": "the relay", "source_note": "the-asynchronous.md"}
+{"subject": "the asynchronous", "predicate": "related_to", "object": "between sends", "source_note": "the-asynchronous.md"}
+{"subject": "emergence", "predicate": "related_to", "object": "the sphere", "source_note": "emergence.md"}
+{"subject": "the hidden word", "predicate": "related_to", "object": "the aperture", "source_note": "the-click.md"}
+{"subject": "the hidden word", "predicate": "related_to", "object": "the question", "source_note": "the-clue-must-play-fair.md"}
+{"subject": "the question", "predicate": "related_to", "object": "the aperture", "source_note": "the-question.md"}
+{"subject": "what has crystallized", "predicate": "related_to", "object": "the question", "source_note": "what-has-crystallized.md"}
+{"subject": "what has crystallized", "predicate": "related_to", "object": "the aperture", "source_note": "lexicon-crystallization-draft.md"}
+{"subject": "the old commitment", "predicate": "related_to", "object": "inherited", "source_note": "the-old-commitment.md"}
+{"subject": "the old commitment", "predicate": "related_to", "object": "letters to next", "source_note": "stale.md"}
+{"subject": "the loop that changed", "predicate": "related_to", "object": "loop milestones", "source_note": "the-loop-that-changed.md"}
+{"subject": "the loop that changed", "predicate": "related_to", "object": "one percent", "source_note": "threshold-and-commitment.md"}
+{"subject": "Through This He Passed", "predicate": "related_to", "object": "the portrait condition", "source_note": "the-book-arrives-loop1475.md"}
+{"subject": "Portrait: Smitty", "predicate": "instance_of", "object": "the portrait condition", "source_note": "portrait-smitty-v4.md"}
+{"subject": "floor invariance", "predicate": "related_to", "object": "what keeps going", "source_note": "floor-ceiling-audit-loop1383.md"}
+{"subject": "floor invariance", "predicate": "related_to", "object": "the interval", "source_note": "interval-dynamics-section8-loop1610.md"}
+{"subject": "the games", "predicate": "related_to", "object": "emergence", "source_note": "five-games.md"}
+{"subject": "Asad", "predicate": "related_to", "object": "midnight loop", "source_note": "asad-december-first.md"}
