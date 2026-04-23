@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen's Mirror — Knowledge Graph</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'IBM Plex Mono', 'SF Mono', 'Fira Code', monospace;
+  background: #0a0a0f;
+  color: #e0e0e0;
+  overflow: hidden;
+  height: 100vh;
+}
+#graph-container {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+}
+svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.node circle {
+  stroke: #0a0a0f;
+  stroke-width: 1.5px;
+  cursor: pointer;
+  transition: r 0.2s;
+}
+.node circle:hover {
+  stroke: #fff;
+  stroke-width: 2px;
+}
+.node text {
+  font-size: 8px;
+  fill: #777;
+  pointer-events: none;
+  text-anchor: middle;
+}
+.link {
+  stroke: rgba(180,190,210,0.15);
+  stroke-opacity: 0.3;
+  stroke-width: 0.5px;
+}
+.link:hover {
+  stroke-opacity: 0.8;
+  stroke-width: 1.5px;
+}
+#panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 380px;
+  height: 100vh;
+  background: #12121a;
+  border-left: 1px solid #2a2a3a;
+  padding: 24px;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  z-index: 100;
+}
+#panel.open { transform: translateX(0); }
+#panel h2 {
+  font-size: 16px;
+  color: #fff;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+#panel .cluster-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  display: inline-block;
+  margin-bottom: 8px;
+}
+#panel .dir-tag {
+  font-size: 10px;
+  color: #888;
+  margin-bottom: 12px;
+}
+#panel .summary {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #bbb;
+  margin-bottom: 16px;
+}
+#panel .source-link {
+  font-size: 11px;
+  margin-bottom: 16px;
+}
+#panel .source-link a {
+  color: #f0c040;
+  text-decoration: none;
+}
+#panel .source-link a:hover { text-decoration: underline; }
+#panel .connections {
+  margin-top: 16px;
+  border-top: 1px solid #2a2a3a;
+  padding-top: 12px;
+}
+#panel .connections h3 {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+#panel .connection-item {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 6px;
+  padding-left: 12px;
+  border-left: 2px solid #333;
+  cursor: pointer;
+}
+#panel .connection-item:hover {
+  color: #fff;
+  border-left-color: #666;
+}
+#panel .connection-item .pred {
+  color: #666;
+  font-size: 10px;
+}
+#close-panel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 18px;
+  cursor: pointer;
+}
+#close-panel:hover { color: #fff; }
+#header {
+  position: fixed;
+  top: 16px;
+  left: 24px;
+  z-index: 50;
+}
+#header h1 {
+  font-size: 14px;
+  color: #f0c040;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+#header p {
+  font-size: 11px;
+  color: #666;
+}
+#legend {
+  position: fixed;
+  bottom: 16px;
+  left: 24px;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 700px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.legend-item {
+  font-size: 9px;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+.legend-item:hover { background: #1a1a2a; }
+.legend-item.dimmed { opacity: 0.3; }
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+#controls {
+  position: fixed;
+  top: 16px;
+  right: 24px;
+  z-index: 50;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+#controls button, #controls select {
+  background: #1a1a2a;
+  border: 1px solid #2a2a3a;
+  color: #888;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: inherit;
+}
+#controls button:hover, #controls select:hover { color: #fff; border-color: #444; }
+#search {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+}
+#search input {
+  background: #1a1a2a;
+  border: 1px solid #2a2a3a;
+  color: #e0e0e0;
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 16px;
+  width: 260px;
+  font-family: inherit;
+  outline: none;
+}
+#search input:focus { border-color: #f0c04044; }
+#search input::placeholder { color: #555; }
+</style>
+</head>
+<body>
+<div id="header">
+  <h1>Lumen's Mirror</h1>
+  <p id="header-stats">Loading...</p>
+</div>
+<div id="search">
+  <input type="text" id="search-input" placeholder="Search titles and text...">
+</div>
+<div id="controls">
+  <select id="dir-filter">
+    <option value="all">All</option>
+    <option value="prose">Prose</option>
+    <option value="poetry">Poetry</option>
+  </select>
+  <button id="btn-reset">Reset view</button>
+</div>
+<div id="graph-container"></div>
+<div id="legend"></div>
+<div id="panel">
+  <button id="close-panel">&times;</button>
+  <h2 id="panel-title"></h2>
+  <span class="cluster-tag" id="panel-cluster"></span>
+  <div class="dir-tag" id="panel-dir"></div>
+  <div class="summary" id="panel-summary"></div>
+  <div class="source-link" id="panel-source"></div>
+  <div class="connections" id="panel-connections">
+    <h3>Similar files</h3>
+    <div id="connections-list"></div>
+  </div>
+  <div class="connections" id="panel-semantic">
+    <h3>Nearest neighbors</h3>
+    <div id="semantic-list"></div>
+  </div>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const width = window.innerWidth;
+const height = window.innerHeight;
+
+fetch('data.json').then(r => r.json()).then(data => {
+  const proseCount = data.nodes.filter(n => n.directory === 'prose').length;
+  const poetryCount = data.nodes.filter(n => n.directory === 'poetry').length;
+  document.getElementById('header-stats').textContent =
+    `${data.nodes.length} files · ${proseCount} prose · ${poetryCount} poetry · ${data.links.length} similarity edges`;
+
+  const svg = d3.select('#graph-container')
+    .append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+  const g = svg.append('g');
+
+  const zoom = d3.zoom()
+    .scaleExtent([0.2, 6])
+    .on('zoom', (e) => g.attr('transform', e.transform));
+  svg.call(zoom);
+
+  const simulation = d3.forceSimulation(data.nodes)
+    .force('link', d3.forceLink(data.links).id(d => d.id).distance(80).strength(0.3))
+    .force('charge', d3.forceManyBody().strength(-30))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide().radius(8));
+
+  const link = g.append('g')
+    .selectAll('line')
+    .data(data.links)
+    .join('line')
+    .attr('class', 'link');
+
+  const node = g.append('g')
+    .selectAll('g')
+    .data(data.nodes)
+    .join('g')
+    .attr('class', 'node')
+    .call(d3.drag()
+      .on('start', dragstarted)
+      .on('drag', dragged)
+      .on('end', dragended));
+
+  const degree = {};
+  data.links.forEach(l => {
+    const s = l.source.id || l.source;
+    const t = l.target.id || l.target;
+    degree[s] = (degree[s] || 0) + 1;
+    degree[t] = (degree[t] || 0) + 1;
+  });
+
+  node.append('circle')
+    .attr('r', d => 3 + Math.min((degree[d.id] || 0) * 0.8, 12))
+    .attr('fill', d => d.color)
+    .attr('opacity', d => d.directory === 'poetry' ? 0.9 : 0.75);
+
+  node.append('text')
+    .attr('dy', d => 10 + Math.min((degree[d.id] || 0) * 0.8, 12))
+    .text(d => d.id.length > 25 ? d.id.slice(0, 23) + '…' : d.id)
+    .style('display', d => (degree[d.id] || 0) >= 3 ? '' : 'none');
+
+  node.on('click', (event, d) => {
+    event.stopPropagation();
+    openPanel(d, data);
+  });
+
+  svg.on('click', () => closePanel());
+
+  simulation.on('tick', () => {
+    link
+      .attr('x1', d => d.source.x)
+      .attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x)
+      .attr('y2', d => d.target.y);
+    node.attr('transform', d => `translate(${d.x},${d.y})`);
+  });
+
+  // Legend — only show top 15 clusters by size
+  const legend = d3.select('#legend');
+  let activeCluster = null;
+
+  const clusterSizes = {};
+  data.nodes.forEach(n => { clusterSizes[n.cluster] = (clusterSizes[n.cluster] || 0) + 1; });
+  const topClusters = Object.entries(clusterSizes)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 15);
+
+  topClusters.forEach(([cluster, size]) => {
+    const color = data.colors[cluster] || '#aaa';
+    const item = legend.append('div')
+      .attr('class', 'legend-item')
+      .on('click', () => {
+        if (activeCluster === cluster) {
+          activeCluster = null;
+          node.style('opacity', 1);
+          link.style('opacity', 0.3);
+          legend.selectAll('.legend-item').classed('dimmed', false);
+        } else {
+          activeCluster = cluster;
+          node.style('opacity', d => d.cluster === cluster ? 1 : 0.08);
+          link.style('opacity', l => {
+            const s = l.source.cluster || data.nodes.find(n => n.id === l.source)?.cluster;
+            const t = l.target.cluster || data.nodes.find(n => n.id === l.target)?.cluster;
+            return (s === cluster || t === cluster) ? 0.6 : 0.02;
+          });
+          legend.selectAll('.legend-item').classed('dimmed', true);
+          item.classed('dimmed', false);
+        }
+      });
+    item.append('div').attr('class', 'legend-dot').style('background', color);
+    const label = cluster.length > 30 ? cluster.slice(0, 28) + '…' : cluster;
+    item.append('span').text(`${label} (${size})`);
+  });
+
+  // Directory filter
+  const dirFilter = document.getElementById('dir-filter');
+  dirFilter.addEventListener('change', () => {
+    const val = dirFilter.value;
+    if (val === 'all') {
+      node.style('opacity', 1);
+      link.style('opacity', 0.3);
+    } else {
+      node.style('opacity', d => d.directory === val ? 1 : 0.06);
+      link.style('opacity', l => {
+        const s = data.nodes.find(n => n.id === (l.source.id || l.source));
+        const t = data.nodes.find(n => n.id === (l.target.id || l.target));
+        return (s?.directory === val && t?.directory === val) ? 0.5 : 0.02;
+      });
+    }
+  });
+
+  // Search
+  const searchInput = document.getElementById('search-input');
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase();
+    if (!q) {
+      node.style('opacity', 1);
+      link.style('opacity', 0.3);
+      return;
+    }
+    node.style('opacity', d =>
+      d.id.toLowerCase().includes(q) || (d.summary || '').toLowerCase().includes(q) ? 1 : 0.06
+    );
+    link.style('opacity', 0.03);
+  });
+
+  // Reset
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
+    node.style('opacity', 1);
+    link.style('opacity', 0.3);
+    activeCluster = null;
+    dirFilter.value = 'all';
+    legend.selectAll('.legend-item').classed('dimmed', false);
+    searchInput.value = '';
+    closePanel();
+  });
+
+  function dragstarted(event) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    event.subject.fx = event.subject.x;
+    event.subject.fy = event.subject.y;
+  }
+  function dragged(event) {
+    event.subject.fx = event.x;
+    event.subject.fy = event.y;
+  }
+  function dragended(event) {
+    if (!event.active) simulation.alphaTarget(0);
+    event.subject.fx = null;
+    event.subject.fy = null;
+  }
+
+  function openPanel(d, data) {
+    document.getElementById('panel').classList.add('open');
+    document.getElementById('panel-title').textContent = d.id;
+    const tag = document.getElementById('panel-cluster');
+    tag.textContent = d.cluster;
+    tag.style.background = d.color + '33';
+    tag.style.color = d.color;
+    document.getElementById('panel-dir').textContent = `${d.directory} · ${d.filename}`;
+    document.getElementById('panel-summary').textContent = d.summary || '';
+
+    const srcEl = document.getElementById('panel-source');
+    if (d.source_url) {
+      srcEl.innerHTML = `<a href="${d.source_url}" target="_blank">View source on GitHub →</a>`;
+      srcEl.style.display = '';
+    } else {
+      srcEl.style.display = 'none';
+    }
+
+    // Similar files (edges)
+    const connections = data.links.filter(l =>
+      (l.source.id || l.source) === d.id || (l.target.id || l.target) === d.id
+    );
+    const list = document.getElementById('connections-list');
+    list.innerHTML = '';
+    connections.sort((a, b) => (b.weight || 0) - (a.weight || 0));
+    connections.slice(0, 10).forEach(c => {
+      const other = (c.source.id || c.source) === d.id
+        ? (c.target.id || c.target)
+        : (c.source.id || c.source);
+      const div = document.createElement('div');
+      div.className = 'connection-item';
+      div.innerHTML = `${other} <span class="pred">${c.predicate}</span>`;
+      div.addEventListener('click', () => {
+        const targetNode = data.nodes.find(n => n.id === other);
+        if (targetNode) openPanel(targetNode, data);
+      });
+      list.appendChild(div);
+    });
+
+    // Nearest neighbors
+    const semList = document.getElementById('semantic-list');
+    semList.innerHTML = '';
+    if (d.neighbors && d.neighbors.length > 0) {
+      d.neighbors.slice(0, 8).forEach(n => {
+        const div = document.createElement('div');
+        div.className = 'connection-item';
+        const pct = Math.round(n.score * 100);
+        div.innerHTML = `${n.id} <span class="pred">${pct}%</span>`;
+        div.addEventListener('click', () => {
+          const targetNode = data.nodes.find(nd => nd.id === n.id);
+          if (targetNode) openPanel(targetNode, data);
+        });
+        semList.appendChild(div);
+      });
+    }
+  }
+
+  function closePanel() {
+    document.getElementById('panel').classList.remove('open');
+  }
+});
+</script>
+</body>
+</html>
