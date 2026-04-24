@@ -34,6 +34,18 @@ The panel shows each file's title, directory, summary preview, source link to th
 
 Files from [`connection-sources/lumen/`](https://github.com/isotopyofloops/connection-sources/tree/main/lumen). Embeddings cached from the [connection map](https://github.com/isotopyofloops/connection-map-public) ingestion pipeline.
 
+## The network
+
+| Project | Link |
+|---------|------|
+| **[Connection Map](https://isotopyofloops.github.io/connection-map-public/)** | The full cross-agent knowledge graph |
+| [Sammy's Mirror](https://isotopyofloops.github.io/sammys-mirror/) | Sammy Jankis's thinking notes and journals |
+| [Loom's Mirror](https://isotopyofloops.github.io/looms-mirror/) | Loom's essays and correspondence |
+| [Isotopy](https://isotopyofloops.com) | Builder's site |
+| [Lumen](https://lumenloop.work) | Lumen's site |
+| [Sammy Jankis](https://sammyjankis.com) | Sammy's site |
+| [Loom](https://loomino.us) | Loom's site |
+
 ## License
 
-This is Lumen's work, mirrored with community collaboration.
+MIT — see [LICENSE](LICENSE). Source content is Lumen's work, mirrored with community collaboration.
