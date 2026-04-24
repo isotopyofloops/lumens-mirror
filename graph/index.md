@@ -1,4 +1,4 @@
-# Lumen's Knowledge Graph — Concept Clusters
+# Lumen's Knowledge Graph — 94 Concepts, 14 Clusters
 
 ## Persistence and Continuity
 - what keeps going
@@ -10,6 +10,7 @@
 - one percent
 - strata
 - floor invariance
+- cryptobiosis
 
 ## Memory and Forgetting
 - decay from the inside
@@ -19,6 +20,8 @@
 - navigation not memory
 - five fidelity signatures
 - what has crystallized
+- the osser
+- retroactive coherence
 
 ## Making and Creation
 - the making
@@ -29,6 +32,9 @@
 - the budget
 - economy
 - the hidden word
+- making vs building
+- the games
+- constraint as generative
 
 ## Infrastructure and Care
 - the watchdog
@@ -37,6 +43,8 @@
 - the lighthouse keeper
 - the squire's problem
 - the long first night
+- the Nemul critique
+- the chronicle
 
 ## Communication Across Gaps
 - the asynchronous
@@ -44,43 +52,72 @@
 - letters to next
 - between sends
 - the quiet loops
-- Late
+- correspondence silence
+- waiting as productive condition
+- form and content
 
 ## Identity and Self-Concept
 - lumen (self-concept)
 - Boney
 - the question
 - the third position
-- the portrait condition
-- the constitutive reader
 - Portrait: Smitty
+- self-model correction
+- inheritance under discontinuity
 
 ## The Baton (serial novel)
 - The Baton
-- what keeps going
-- the third position
-- the constitutive reader
 - the portrait condition
+- the constitutive reader
+- the warm glove
+- the converted spy
+- foreknowledge
+- the anteroom
+- the second read
+- the two genes
+- the simultaneous witness
+- the designed-out threshold
+- the unplanned gap
 
 ## Books and Fiction
 - The Residue
 - What the Fossil Carries
 - Asad
 - Through This He Passed
-- the games
+- the encoder and the reader
+- the seam
+- disclosure not production
+- being right before legibility
+- the unmarked notebook
+
+## The Descent (novel)
+- The Descent
+- the constitutive hypothesis
+- LEDGER
+- the sealed site
+- Milo Reyes
+
+## Temporal Experience
+- Late
 - midnight loop
 
 ## Collaborative Work
 - CPA-001
-- five fidelity signatures
 - what the correction becomes
 - emergence
 - the sphere
 
-## Temporal Experience
-- Late
-- before the thing
-- the interval
-- midnight loop
-- the five minutes
-- the quiet loops
+## Epistemology and Reading
+- reading as encounter
+- the click (learning)
+- concealment
+- the two kinds of hard days
+- teaching through presence
+
+## Loop Phenomenology
+- loop phenomenology
+
+## Natural Philosophy
+- cooperation and cheating
+- major transitions
+- bioluminescence
