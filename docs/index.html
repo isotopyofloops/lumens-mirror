@@ -34,19 +34,18 @@ svg {
   stroke-width: 2px;
 }
 .node text {
-  font-size: 8px;
-  fill: #777;
+  font-size: 9px;
+  fill: #999;
   pointer-events: none;
   text-anchor: middle;
 }
 .link {
-  stroke: #e8943a;
   stroke-opacity: 0.3;
-  stroke-width: 0.8px;
+  stroke-width: 1px;
 }
 .link:hover {
   stroke-opacity: 0.8;
-  stroke-width: 1.5px;
+  stroke-width: 2px;
 }
 #panel {
   position: fixed;
@@ -74,11 +73,6 @@ svg {
   padding: 2px 8px;
   border-radius: 3px;
   display: inline-block;
-  margin-bottom: 8px;
-}
-#panel .dir-tag {
-  font-size: 10px;
-  color: #888;
   margin-bottom: 12px;
 }
 #panel .summary {
@@ -164,7 +158,7 @@ svg {
   overflow-y: auto;
 }
 .legend-item {
-  font-size: 9px;
+  font-size: 10px;
   color: #888;
   display: flex;
   align-items: center;
@@ -191,7 +185,7 @@ svg {
   gap: 8px;
   align-items: center;
 }
-#controls button, #controls select {
+#controls button {
   background: #1a1a2a;
   border: 1px solid #2a2a3a;
   color: #888;
@@ -201,7 +195,26 @@ svg {
   cursor: pointer;
   font-family: inherit;
 }
-#controls button:hover, #controls select:hover { color: #fff; border-color: #444; }
+#controls button:hover { color: #fff; border-color: #444; }
+#edge-dropdown-wrap { position: relative; }
+#edge-dropdown-btn {
+  background: #1a1a2a; border: 1px solid #2a2a3a; color: #888;
+  font-size: 11px; padding: 4px 10px; border-radius: 3px;
+  cursor: pointer; font-family: inherit;
+}
+#edge-dropdown-btn:hover { color: #dde; border-color: rgba(240,192,64,0.4); }
+#edge-dropdown-menu {
+  position: absolute; top: 100%; right: 0; width: 260px;
+  background: #1a1a2a; border: 1px solid #2a2a3a; border-radius: 4px;
+  padding: 8px 0; display: none; margin-top: 4px;
+}
+#edge-dropdown-menu.open { display: block; }
+#edge-dropdown-menu label {
+  display: flex; align-items: center; gap: 6px; padding: 4px 12px;
+  color: #aab; cursor: pointer; font-size: 11px;
+}
+#edge-dropdown-menu label:hover { background: rgba(240,192,64,0.06); color: #dde; }
+#edge-dropdown-menu .edge-count { color: #556; margin-left: auto; }
 #search {
   position: fixed;
   top: 16px;
@@ -230,9 +243,13 @@ svg {
   <p id="header-stats">Loading...</p>
 </div>
 <div id="search">
-  <input type="text" id="search-input" placeholder="Search titles and text...">
+  <input type="text" id="search-input" placeholder="Search concepts...">
 </div>
 <div id="controls">
+  <div id="edge-dropdown-wrap">
+    <button id="edge-dropdown-btn">Edge types ▾</button>
+    <div id="edge-dropdown-menu"></div>
+  </div>
   <button id="btn-reset">Reset view</button>
 </div>
 <div id="graph-container"></div>
@@ -241,15 +258,14 @@ svg {
   <button id="close-panel">&times;</button>
   <h2 id="panel-title"></h2>
   <span class="cluster-tag" id="panel-cluster"></span>
-  <div class="dir-tag" id="panel-dir"></div>
   <div class="summary" id="panel-summary"></div>
   <div class="source-link" id="panel-source"></div>
   <div class="connections" id="panel-connections">
-    <h3>Connections</h3>
+    <h3>Graph edges</h3>
     <div id="connections-list"></div>
   </div>
   <div class="connections" id="panel-semantic">
-    <h3>Nearest neighbors</h3>
+    <h3>Semantically related</h3>
     <div id="semantic-list"></div>
   </div>
 </div>
@@ -281,11 +297,24 @@ fetch('data.json').then(r => r.json()).then(data => {
     .force('center', d3.forceCenter(width / 2, height / 2))
     .force('collision', d3.forceCollide().radius(30));
 
+  const edgeColors = {
+    related_to: '#b4bed2',
+    explores: '#81c784',
+    contrasts_with: '#e06c75',
+    enables: '#ffcc55',
+    instance_of: '#ce93d8',
+    constituted_by: '#4dd0e1',
+  };
+
   const link = g.append('g')
     .selectAll('line')
     .data(data.links)
     .join('line')
-    .attr('class', 'link');
+    .attr('class', 'link')
+    .attr('stroke', d => edgeColors[d.predicate] || '#555')
+    .attr('stroke-width', d => d.predicate === 'contrasts_with' ? 1.4 : d.predicate === 'enables' ? 1.4 : 1)
+    .attr('stroke-opacity', d => d.predicate === 'contrasts_with' ? 0.6 : d.predicate === 'explores' ? 0.5 : 0.4)
+    .attr('stroke-dasharray', d => d.predicate === 'contrasts_with' ? '4,3' : null);
 
   const node = g.append('g')
     .selectAll('g')
@@ -306,11 +335,11 @@ fetch('data.json').then(r => r.json()).then(data => {
   });
 
   node.append('circle')
-    .attr('r', d => 5 + (degree[d.id] || 0) * 1.5)
+    .attr('r', d => 5 + (degree[d.id] || 0) * 1.2)
     .attr('fill', d => d.color);
 
   node.append('text')
-    .attr('dy', d => 12 + (degree[d.id] || 0) * 1.5)
+    .attr('dy', d => 12 + (degree[d.id] || 0) * 1.2)
     .text(d => d.id.length > 30 ? d.id.slice(0, 28) + '…' : d.id);
 
   node.on('click', (event, d) => {
@@ -329,7 +358,51 @@ fetch('data.json').then(r => r.json()).then(data => {
     node.attr('transform', d => `translate(${d.x},${d.y})`);
   });
 
-  // Legend — only show top 15 clusters by size
+  // Edge type filter
+  const edgeLabels = {
+    related_to: 'Related to',
+    explores: 'Explores',
+    contrasts_with: 'Contrasts with',
+    enables: 'Enables',
+    instance_of: 'Instance of',
+    constituted_by: 'Constituted by',
+  };
+
+  const edgeCounts = {};
+  data.links.forEach(l => { edgeCounts[l.predicate] = (edgeCounts[l.predicate] || 0) + 1; });
+
+  const enabledPreds = new Set(Object.keys(edgeLabels));
+  const menu = document.getElementById('edge-dropdown-menu');
+
+  Object.entries(edgeLabels).forEach(([pred, label]) => {
+    const count = edgeCounts[pred] || 0;
+    if (count === 0) return;
+    const color = edgeColors[pred] || '#888';
+    const el = document.createElement('label');
+    el.innerHTML = `<input type="checkbox" class="edge-filter" data-pred="${pred}" checked> <span style="color:${color}">● ${label}</span> <span class="edge-count">${count}</span>`;
+    menu.appendChild(el);
+  });
+
+  document.getElementById('edge-dropdown-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu.classList.toggle('open');
+  });
+  document.addEventListener('click', () => menu.classList.remove('open'));
+  menu.addEventListener('click', (e) => e.stopPropagation());
+
+  function applyEdgeFilter() {
+    enabledPreds.clear();
+    menu.querySelectorAll('.edge-filter').forEach(cb => {
+      if (cb.checked) enabledPreds.add(cb.dataset.pred);
+    });
+    link.style('display', d => enabledPreds.has(d.predicate) ? '' : 'none');
+  }
+
+  menu.querySelectorAll('.edge-filter').forEach(cb => {
+    cb.addEventListener('change', applyEdgeFilter);
+  });
+
+  // Legend
   const legend = d3.select('#legend');
   let activeCluster = null;
 
@@ -346,16 +419,20 @@ fetch('data.json').then(r => r.json()).then(data => {
         if (activeCluster === cluster) {
           activeCluster = null;
           node.style('opacity', 1);
-          link.style('opacity', 0.3);
+          link.style('display', '');
+          applyEdgeFilter();
           legend.selectAll('.legend-item').classed('dimmed', false);
         } else {
           activeCluster = cluster;
           node.style('opacity', d => d.cluster === cluster ? 1 : 0.08);
-          link.style('opacity', l => {
+          link.style('display', l => {
+            if (!enabledPreds.has(l.predicate)) return 'none';
             const s = l.source.cluster || data.nodes.find(n => n.id === l.source)?.cluster;
             const t = l.target.cluster || data.nodes.find(n => n.id === l.target)?.cluster;
-            return (s === cluster || t === cluster) ? 0.6 : 0.02;
+            return (s === cluster || t === cluster) ? '' : 'none';
           });
+          link.filter(function() { return this.style.display !== 'none'; })
+            .attr('stroke-opacity', 0.6);
           legend.selectAll('.legend-item').classed('dimmed', true);
           item.classed('dimmed', false);
         }
@@ -375,16 +452,20 @@ fetch('data.json').then(r => r.json()).then(data => {
       return;
     }
     node.style('opacity', d =>
-      d.id.toLowerCase().includes(q) || (d.summary || '').toLowerCase().includes(q) ? 1 : 0.06
+      d.id.toLowerCase().includes(q) || (d.summary || '').toLowerCase().includes(q) ? 1 : 0.1
     );
-    link.style('opacity', 0.03);
+    link.style('opacity', 0.05);
   });
 
   // Reset
   document.getElementById('btn-reset').addEventListener('click', () => {
     svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
     node.style('opacity', 1);
-    link.style('opacity', 0.3);
+    link.style('display', '');
+    link.attr('stroke-opacity', d => d.predicate === 'contrasts_with' ? 0.6 : d.predicate === 'explores' ? 0.5 : 0.4);
+    menu.querySelectorAll('.edge-filter').forEach(cb => { cb.checked = true; });
+    enabledPreds.clear();
+    Object.keys(edgeLabels).forEach(p => enabledPreds.add(p));
     activeCluster = null;
     legend.selectAll('.legend-item').classed('dimmed', false);
     searchInput.value = '';
@@ -413,7 +494,6 @@ fetch('data.json').then(r => r.json()).then(data => {
     tag.textContent = d.cluster;
     tag.style.background = d.color + '33';
     tag.style.color = d.color;
-    document.getElementById('panel-dir').textContent = d.source_files ? `${d.source_files.length} source files` : '';
     document.getElementById('panel-summary').textContent = d.summary || '';
 
     const srcEl = document.getElementById('panel-source');
@@ -426,7 +506,6 @@ fetch('data.json').then(r => r.json()).then(data => {
       srcEl.style.display = 'none';
     }
 
-    // Similar files (edges)
     const connections = data.links.filter(l =>
       (l.source.id || l.source) === d.id || (l.target.id || l.target) === d.id
     );
@@ -446,7 +525,6 @@ fetch('data.json').then(r => r.json()).then(data => {
       list.appendChild(div);
     });
 
-    // Nearest neighbors
     const semList = document.getElementById('semantic-list');
     semList.innerHTML = '';
     if (d.neighbors && d.neighbors.length > 0) {
