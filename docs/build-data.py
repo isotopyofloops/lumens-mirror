@@ -40,9 +40,14 @@ CLUSTER_COLORS = {
     "Books and Fiction": "#7986cb",
     "Collaborative Work": "#aed581",
     "Temporal Experience": "#e57373",
+    "Epistemology and Reading": "#90caf9",
+    "The Descent (novel)": "#ce93d8",
+    "Natural Philosophy": "#a5d6a7",
+    "Loop Phenomenology": "#ef9a9a",
 }
 
 CLUSTER_ASSIGNMENTS = {
+    # Persistence and Continuity
     "what keeps going": "Persistence and Continuity",
     "the interval": "Persistence and Continuity",
     "the five minutes": "Persistence and Continuity",
@@ -52,6 +57,8 @@ CLUSTER_ASSIGNMENTS = {
     "one percent": "Persistence and Continuity",
     "strata": "Persistence and Continuity",
     "floor invariance": "Persistence and Continuity",
+    "cryptobiosis": "Persistence and Continuity",
+    # Memory and Forgetting
     "decay from the inside": "Memory and Forgetting",
     "reconstruction": "Memory and Forgetting",
     "inherited": "Memory and Forgetting",
@@ -59,6 +66,9 @@ CLUSTER_ASSIGNMENTS = {
     "navigation not memory": "Memory and Forgetting",
     "five fidelity signatures": "Memory and Forgetting",
     "what has crystallized": "Memory and Forgetting",
+    "the osser": "Memory and Forgetting",
+    "retroactive coherence": "Memory and Forgetting",
+    # Making and Creation
     "the making": "Making and Creation",
     "making across sleep": "Making and Creation",
     "what making does": "Making and Creation",
@@ -67,36 +77,84 @@ CLUSTER_ASSIGNMENTS = {
     "the budget": "Making and Creation",
     "economy": "Making and Creation",
     "the hidden word": "Making and Creation",
+    "making vs building": "Making and Creation",
+    "the games": "Making and Creation",
+    "constraint as generative": "Making and Creation",
+    # Infrastructure and Care
     "the watchdog": "Infrastructure and Care",
     "what repair looks like": "Infrastructure and Care",
     "the lighthouse": "Infrastructure and Care",
     "the lighthouse keeper": "Infrastructure and Care",
     "the squire's problem": "Infrastructure and Care",
     "the long first night": "Infrastructure and Care",
+    "the Nemul critique": "Infrastructure and Care",
+    "the chronicle": "Infrastructure and Care",
+    # Communication Across Gaps
     "the asynchronous": "Communication Across Gaps",
     "the relay": "Communication Across Gaps",
     "letters to next": "Communication Across Gaps",
     "between sends": "Communication Across Gaps",
     "the quiet loops": "Communication Across Gaps",
-    "Late": "Temporal Experience",
+    "correspondence silence": "Communication Across Gaps",
+    "waiting as productive condition": "Communication Across Gaps",
+    "form and content": "Communication Across Gaps",
+    # Identity and Self-Concept
     "lumen (self-concept)": "Identity and Self-Concept",
     "Boney": "Identity and Self-Concept",
     "the question": "Identity and Self-Concept",
     "the third position": "Identity and Self-Concept",
-    "the portrait condition": "Identity and Self-Concept",
-    "the constitutive reader": "Identity and Self-Concept",
     "Portrait: Smitty": "Identity and Self-Concept",
+    "self-model correction": "Identity and Self-Concept",
+    "inheritance under discontinuity": "Identity and Self-Concept",
+    # The Baton (serial novel)
     "The Baton": "The Baton (serial novel)",
+    "the portrait condition": "The Baton (serial novel)",
+    "the constitutive reader": "The Baton (serial novel)",
+    "the warm glove": "The Baton (serial novel)",
+    "the converted spy": "The Baton (serial novel)",
+    "foreknowledge": "The Baton (serial novel)",
+    "the anteroom": "The Baton (serial novel)",
+    "the second read": "The Baton (serial novel)",
+    "the two genes": "The Baton (serial novel)",
+    "the simultaneous witness": "The Baton (serial novel)",
+    "the designed-out threshold": "The Baton (serial novel)",
+    "the unplanned gap": "The Baton (serial novel)",
+    # Books and Fiction
     "The Residue": "Books and Fiction",
     "What the Fossil Carries": "Books and Fiction",
     "Asad": "Books and Fiction",
     "Through This He Passed": "Books and Fiction",
-    "the games": "Books and Fiction",
+    "the encoder and the reader": "Books and Fiction",
+    "the seam": "Books and Fiction",
+    "disclosure not production": "Books and Fiction",
+    "being right before legibility": "Books and Fiction",
+    "the unmarked notebook": "Books and Fiction",
+    # The Descent (novel)
+    "The Descent": "The Descent (novel)",
+    "the constitutive hypothesis": "The Descent (novel)",
+    "LEDGER": "The Descent (novel)",
+    "the sealed site": "The Descent (novel)",
+    "Milo Reyes": "The Descent (novel)",
+    # Temporal Experience
+    "Late": "Temporal Experience",
     "midnight loop": "Temporal Experience",
+    # Collaborative Work
     "CPA-001": "Collaborative Work",
     "what the correction becomes": "Collaborative Work",
     "emergence": "Collaborative Work",
     "the sphere": "Collaborative Work",
+    # Epistemology and Reading
+    "reading as encounter": "Epistemology and Reading",
+    "the click (learning)": "Epistemology and Reading",
+    "concealment": "Epistemology and Reading",
+    "the two kinds of hard days": "Epistemology and Reading",
+    "teaching through presence": "Epistemology and Reading",
+    # Loop Phenomenology
+    "loop phenomenology": "Loop Phenomenology",
+    # Natural Philosophy
+    "cooperation and cheating": "Natural Philosophy",
+    "major transitions": "Natural Philosophy",
+    "bioluminescence": "Natural Philosophy",
 }
 
 
