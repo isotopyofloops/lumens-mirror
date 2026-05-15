@@ -1,551 +1,1111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lumen's Mirror — Knowledge Graph</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumen's Mirror — Explorer</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  font-family: 'IBM Plex Mono', 'SF Mono', 'Fira Code', monospace;
-  background: #0a0a0f;
-  color: #e0e0e0;
-  overflow: hidden;
-  height: 100vh;
+  background: #0a0a14; color: #c8c8d0;
+  font-family: 'Courier New', monospace;
+  height: 100vh; display: flex; flex-direction: column; overflow: hidden;
 }
-#graph-container {
-  width: 100%;
-  height: 100vh;
-  position: relative;
+#top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 20px; border-bottom: 1px solid rgba(100,200,255,0.1);
+  background: rgba(5,5,8,0.95); flex-shrink: 0;
 }
-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
+#top-bar h1 { font-size: 14px; color: #dde; letter-spacing: 0.02em; }
+#top-bar .sub { font-size: 10px; color: #556; margin-left: 12px; }
+#view-toggle {
+  display: flex; gap: 2px; background: rgba(255,255,255,0.05);
+  border-radius: 6px; padding: 2px;
 }
-.node circle {
-  stroke: #0a0a0f;
-  stroke-width: 1.5px;
-  cursor: pointer;
-  transition: r 0.2s;
+#view-toggle button {
+  background: transparent; border: none; color: #667;
+  font-family: 'Courier New', monospace; font-size: 11px;
+  padding: 4px 12px; cursor: pointer; border-radius: 4px; transition: all 0.2s;
 }
-.node circle:hover {
-  stroke: #fff;
-  stroke-width: 2px;
+#view-toggle button.active { background: rgba(100,200,255,0.15); color: #adf; }
+#view-toggle button:hover:not(.active) { color: #aab; }
+#command-bar {
+  display: flex; align-items: center; padding: 8px 20px;
+  border-bottom: 1px solid rgba(100,200,255,0.08);
+  background: rgba(8,8,16,0.9); flex-shrink: 0;
 }
-.node text {
-  font-size: 9px;
-  fill: #999;
-  pointer-events: none;
-  text-anchor: middle;
+.prompt { color: #55eecc; font-size: 14px; margin-right: 8px; user-select: none; }
+#cmd-input {
+  background: transparent; border: none; color: #e0e0e8;
+  font-family: 'Courier New', monospace; font-size: 13px;
+  flex: 1; outline: none;
 }
-.link {
-  stroke-opacity: 0.3;
-  stroke-width: 1px;
+#cmd-input::placeholder { color: #445; }
+#main { display: flex; flex: 1; overflow: hidden; }
+#text-panel { flex: 1; overflow-y: auto; padding: 16px 20px; min-width: 0; }
+#output {
+  font-family: 'Courier New', monospace; font-size: 12px;
+  line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;
 }
-.link:hover {
-  stroke-opacity: 0.8;
-  stroke-width: 2px;
+.nl { color: #7df; cursor: pointer; border-bottom: 1px dotted rgba(100,200,255,0.3); }
+.nl:hover { color: #aef; border-bottom-color: rgba(100,200,255,0.6); }
+.cl { color: #55eecc; cursor: pointer; }
+.cl:hover { color: #88ffee; text-decoration: underline; }
+.dim { color: #556; }
+.hdr { color: #dde; }
+#graph-panel {
+  width: 45%; border-left: 1px solid rgba(100,200,255,0.08);
+  position: relative; flex-shrink: 0;
 }
-#panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 380px;
-  height: 100vh;
-  background: #12121a;
-  border-left: 1px solid #2a2a3a;
-  padding: 24px;
-  overflow-y: auto;
-  transform: translateX(100%);
-  transition: transform 0.3s ease;
-  z-index: 100;
+#graph-panel.hidden { display: none; }
+#cy { width: 100%; height: 100%; }
+#graph-legend {
+  position: absolute; bottom: 10px; left: 10px;
+  background: rgba(8,8,16,0.9); border: 1px solid rgba(100,200,255,0.1);
+  border-radius: 6px; padding: 8px 12px; font-size: 10px; z-index: 5;
 }
-#panel.open { transform: translateX(0); }
-#panel h2 {
-  font-size: 16px;
-  color: #fff;
-  margin-bottom: 8px;
-  font-weight: 600;
+.legend-item { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.ldot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+#graph-info {
+  position: absolute; top: 10px; right: 10px;
+  background: rgba(8,8,16,0.9); border: 1px solid rgba(100,200,255,0.1);
+  border-radius: 6px; padding: 6px 10px; font-size: 10px; color: #556; z-index: 5;
 }
-#panel .cluster-tag {
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 3px;
-  display: inline-block;
-  margin-bottom: 12px;
-}
-#panel .summary {
-  font-size: 13px;
-  line-height: 1.6;
-  color: #bbb;
-  margin-bottom: 16px;
-}
-#panel .source-link {
-  font-size: 11px;
-  margin-bottom: 16px;
-}
-#panel .source-link a {
-  color: #f0c040;
-  text-decoration: none;
-}
-#panel .source-link a:hover { text-decoration: underline; }
-#panel .connections {
-  margin-top: 16px;
-  border-top: 1px solid #2a2a3a;
-  padding-top: 12px;
-}
-#panel .connections h3 {
-  font-size: 12px;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
-}
-#panel .connection-item {
-  font-size: 12px;
-  color: #aaa;
-  margin-bottom: 6px;
-  padding-left: 12px;
-  border-left: 2px solid #333;
-  cursor: pointer;
-}
-#panel .connection-item:hover {
-  color: #fff;
-  border-left-color: #666;
-}
-#panel .connection-item .pred {
-  color: #666;
-  font-size: 10px;
-}
-#close-panel {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: none;
-  border: none;
-  color: #666;
-  font-size: 18px;
-  cursor: pointer;
-}
-#close-panel:hover { color: #fff; }
-#header {
-  position: fixed;
-  top: 16px;
-  left: 24px;
-  z-index: 50;
-}
-#header h1 {
-  font-size: 14px;
-  color: #f0c040;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-#header p {
-  font-size: 11px;
-  color: #666;
-}
-#legend {
-  position: fixed;
-  bottom: 16px;
-  left: 24px;
-  z-index: 50;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  max-width: 700px;
-  max-height: 120px;
-  overflow-y: auto;
-}
-.legend-item {
-  font-size: 10px;
-  color: #888;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 3px;
-  transition: background 0.2s;
-}
-.legend-item:hover { background: #1a1a2a; }
-.legend-item.dimmed { opacity: 0.3; }
-.legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-#controls {
-  position: fixed;
-  top: 16px;
-  right: 24px;
-  z-index: 50;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-#controls button {
-  background: #1a1a2a;
-  border: 1px solid #2a2a3a;
-  color: #888;
-  font-size: 11px;
-  padding: 4px 10px;
-  border-radius: 3px;
-  cursor: pointer;
-  font-family: inherit;
-}
-#controls button:hover { color: #fff; border-color: #444; }
-#edge-dropdown-wrap { position: relative; }
-#edge-dropdown-btn {
-  background: #1a1a2a; border: 1px solid #2a2a3a; color: #888;
-  font-size: 11px; padding: 4px 10px; border-radius: 3px;
-  cursor: pointer; font-family: inherit;
-}
-#edge-dropdown-btn:hover { color: #dde; border-color: rgba(240,192,64,0.4); }
-#edge-dropdown-menu {
-  position: absolute; top: 100%; right: 0; width: 260px;
-  background: #1a1a2a; border: 1px solid #2a2a3a; border-radius: 4px;
-  padding: 8px 0; display: none; margin-top: 4px;
-}
-#edge-dropdown-menu.open { display: block; }
-#edge-dropdown-menu label {
-  display: flex; align-items: center; gap: 6px; padding: 4px 12px;
-  color: #aab; cursor: pointer; font-size: 11px;
-}
-#edge-dropdown-menu label:hover { background: rgba(240,192,64,0.06); color: #dde; }
-#edge-dropdown-menu .edge-count { color: #556; margin-left: auto; }
-#search {
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 50;
-}
-#search input {
-  background: #1a1a2a;
-  border: 1px solid #2a2a3a;
-  color: #e0e0e0;
-  font-size: 12px;
-  padding: 6px 14px;
-  border-radius: 16px;
-  width: 260px;
-  font-family: inherit;
-  outline: none;
-}
-#search input:focus { border-color: #f0c04044; }
-#search input::placeholder { color: #555; }
+#text-panel::-webkit-scrollbar { width: 6px; }
+#text-panel::-webkit-scrollbar-track { background: transparent; }
+#text-panel::-webkit-scrollbar-thumb { background: rgba(100,200,255,0.15); border-radius: 3px; }
 </style>
 </head>
 <body>
-<div id="header">
-  <h1>Lumen's Mirror</h1>
-  <p id="header-stats">Loading...</p>
-</div>
-<div id="search">
-  <input type="text" id="search-input" placeholder="Search concepts...">
-</div>
-<div id="controls">
-  <div id="edge-dropdown-wrap">
-    <button id="edge-dropdown-btn">Edge types ▾</button>
-    <div id="edge-dropdown-menu"></div>
+<div id="top-bar">
+  <div style="display:flex;align-items:baseline">
+    <h1>Lumen's Mirror</h1>
+    <span class="sub">agent UX prototype</span>
   </div>
-  <button id="btn-reset">Reset view</button>
-</div>
-<div id="graph-container"></div>
-<div id="legend"></div>
-<div id="panel">
-  <button id="close-panel">&times;</button>
-  <h2 id="panel-title"></h2>
-  <span class="cluster-tag" id="panel-cluster"></span>
-  <div class="summary" id="panel-summary"></div>
-  <div class="source-link" id="panel-source"></div>
-  <div class="connections" id="panel-connections">
-    <h3>Graph edges</h3>
-    <div id="connections-list"></div>
-  </div>
-  <div class="connections" id="panel-semantic">
-    <h3>Semantically related</h3>
-    <div id="semantic-list"></div>
+  <div id="view-toggle">
+    <button class="active" id="vb-both">Graph + Text</button>
+    <button id="vb-text">Text Only</button>
   </div>
 </div>
-
-<script src="https://d3js.org/d3.v7.min.js"></script>
+<div id="command-bar">
+  <span class="prompt">&gt;</span>
+  <input type="text" id="cmd-input" placeholder="type 'explore' to start" autofocus>
+</div>
+<div id="main">
+  <div id="text-panel"><div id="output"><span class="dim">Loading...</span></div></div>
+  <div id="graph-panel">
+    <div id="cy"></div>
+    <div id="graph-legend">
+      <div class="legend-item"><span class="ldot" style="background:#64b5f6"></span> Prose</div>
+      <div class="legend-item"><span class="ldot" style="background:#ff8a65"></span> Weird</div>
+      <div class="legend-item"><span class="ldot" style="background:#81c784"></span> Poetry</div>
+      <div class="legend-item"><span class="ldot" style="background:#ba68c8"></span> Nemul</div>
+      <div class="legend-item"><span class="ldot" style="background:#4dd0e1"></span> Fiction</div>
+      <div class="legend-item"><span class="ldot" style="background:#f06292"></span> Descent</div>
+      <div class="legend-item"><span class="ldot" style="background:#ffb74d"></span> Language</div>
+      <div class="legend-item"><span class="ldot" style="background:#aed581"></span> Nature</div>
+    </div>
+    <div id="graph-info"></div>
+  </div>
+</div>
+<script src="https://unpkg.com/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
 <script>
-const width = window.innerWidth;
-const height = window.innerHeight;
+const OC = {
+  'prose':'#64b5f6', 'weird':'#ff8a65', 'poetry':'#81c784',
+  'nemul':'#ba68c8', 'fiction':'#4dd0e1', 'descent':'#f06292',
+  'language':'#ffb74d', 'nature':'#aed581', 'reading':'#7986cb',
+  'historian':'#e57373', 'other':'#888'
+};
+const EC = {
+  related_to:'rgba(180,190,210,0.45)', instance_of:'rgba(180,190,210,0.45)',
+  elaborates:'#55ccff', contrasts_with:'#ff9966',
+  describes_mechanism_of:'rgba(180,190,210,0.45)',
+  same_phenomenon:'rgba(180,190,210,0.45)',
+  cosine_similarity:'rgba(180,190,210,0.3)'
+};
 
-fetch('data.json').then(r => r.json()).then(data => {
-  document.getElementById('header-stats').textContent =
-    `${data.nodes.length} concepts · ${data.links.length} edges · ${data.clusters.length} clusters`;
+let NM={}, adj={}, EL=[], comms={}, NC={}, cy=null, hist=[], hidx=-1, lastSimilar=null;
 
-  const svg = d3.select('#graph-container')
-    .append('svg')
-    .attr('width', width)
-    .attr('height', height);
-
-  const g = svg.append('g');
-
-  const zoom = d3.zoom()
-    .scaleExtent([0.2, 6])
-    .on('zoom', (e) => g.attr('transform', e.transform));
-  svg.call(zoom);
-
-  const simulation = d3.forceSimulation(data.nodes)
-    .force('link', d3.forceLink(data.links).id(d => d.id).distance(120))
-    .force('charge', d3.forceManyBody().strength(-200))
-    .force('center', d3.forceCenter(width / 2, height / 2))
-    .force('collision', d3.forceCollide().radius(30));
-
-  const edgeColors = {
-    related_to: '#b4bed2',
-    explores: '#81c784',
-    contrasts_with: '#e06c75',
-    enables: '#ffcc55',
-    instance_of: '#ce93d8',
-    constituted_by: '#4dd0e1',
-  };
-
-  const link = g.append('g')
-    .selectAll('line')
-    .data(data.links)
-    .join('line')
-    .attr('class', 'link')
-    .attr('stroke', d => edgeColors[d.predicate] || '#555')
-    .attr('stroke-width', d => d.predicate === 'contrasts_with' ? 1.4 : d.predicate === 'enables' ? 1.4 : 1)
-    .attr('stroke-opacity', d => d.predicate === 'contrasts_with' ? 0.6 : d.predicate === 'explores' ? 0.5 : 0.4)
-    .attr('stroke-dasharray', d => d.predicate === 'contrasts_with' ? '4,3' : null);
-
-  const node = g.append('g')
-    .selectAll('g')
-    .data(data.nodes)
-    .join('g')
-    .attr('class', 'node')
-    .call(d3.drag()
-      .on('start', dragstarted)
-      .on('drag', dragged)
-      .on('end', dragended));
-
-  const degree = {};
-  data.links.forEach(l => {
-    const s = l.source.id || l.source;
-    const t = l.target.id || l.target;
-    degree[s] = (degree[s] || 0) + 1;
-    degree[t] = (degree[t] || 0) + 1;
-  });
-
-  node.append('circle')
-    .attr('r', d => 5 + (degree[d.id] || 0) * 1.2)
-    .attr('fill', d => d.color);
-
-  node.append('text')
-    .attr('dy', d => 12 + (degree[d.id] || 0) * 1.2)
-    .text(d => d.id.length > 30 ? d.id.slice(0, 28) + '…' : d.id);
-
-  node.on('click', (event, d) => {
-    event.stopPropagation();
-    openPanel(d, data);
-  });
-
-  svg.on('click', () => closePanel());
-
-  simulation.on('tick', () => {
-    link
-      .attr('x1', d => d.source.x)
-      .attr('y1', d => d.source.y)
-      .attr('x2', d => d.target.x)
-      .attr('y2', d => d.target.y);
-    node.attr('transform', d => `translate(${d.x},${d.y})`);
-  });
-
-  // Edge type filter
-  const edgeLabels = {
-    related_to: 'Related to',
-    explores: 'Explores',
-    contrasts_with: 'Contrasts with',
-    enables: 'Enables',
-    instance_of: 'Instance of',
-    constituted_by: 'Constituted by',
-  };
-
-  const edgeCounts = {};
-  data.links.forEach(l => { edgeCounts[l.predicate] = (edgeCounts[l.predicate] || 0) + 1; });
-
-  const enabledPreds = new Set(Object.keys(edgeLabels));
-  const menu = document.getElementById('edge-dropdown-menu');
-
-  Object.entries(edgeLabels).forEach(([pred, label]) => {
-    const count = edgeCounts[pred] || 0;
-    if (count === 0) return;
-    const color = edgeColors[pred] || '#888';
-    const el = document.createElement('label');
-    el.innerHTML = `<input type="checkbox" class="edge-filter" data-pred="${pred}" checked> <span style="color:${color}">● ${label}</span> <span class="edge-count">${count}</span>`;
-    menu.appendChild(el);
-  });
-
-  document.getElementById('edge-dropdown-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    menu.classList.toggle('open');
-  });
-  document.addEventListener('click', () => menu.classList.remove('open'));
-  menu.addEventListener('click', (e) => e.stopPropagation());
-
-  function applyEdgeFilter() {
-    enabledPreds.clear();
-    menu.querySelectorAll('.edge-filter').forEach(cb => {
-      if (cb.checked) enabledPreds.add(cb.dataset.pred);
-    });
-    link.style('display', d => enabledPreds.has(d.predicate) ? '' : 'none');
+function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function oc(o){
+  if(Array.isArray(o)){
+    if(o.length===1) return OC[o[0]]||'#888';
+    return '#55eecc';
   }
+  return OC[o]||'#888';
+}
+function ostr(n){const o=n.origin||'?';return Array.isArray(o)?o.join('+'):o;}
+function olist(n){const o=n.origin||'';return Array.isArray(o)?o.map(x=>x.toLowerCase()):(o?[o.toLowerCase()]:[]);}
+function hasO(n,origin){return olist(n).includes(origin.toLowerCase());}
+function fByO(origin){const r=new Set();for(const[id,n]of Object.entries(NM))if(hasO(n,origin))r.add(id);return r;}
+function fByT(type){const t=type.toLowerCase();const r=new Set();for(const[id,n]of Object.entries(NM))if((n.type||'').toLowerCase()===t)r.add(id);return r;}
+function resolve(name){
+  if(NM[name])return name;
+  const low=name.toLowerCase();
+  for(const id of Object.keys(NM))if(id.toLowerCase()===low)return id;
+  for(const id of Object.keys(NM))if(id.toLowerCase().includes(low))return id;
+  return null;
+}
+function validOrigins(){const s=new Set();for(const n of Object.values(NM))for(const o of olist(n))s.add(o);return[...s].sort();}
+function validTypes(){const s=new Set();for(const n of Object.values(NM))s.add(n.type||'?');return[...s].sort();}
+function deg(id){return adj[id]?adj[id].size:0;}
+function clabel(members){
+  const origins={};
+  for(const m of members){if(!NM[m])continue;for(const o of olist(NM[m]))origins[o]=(origins[o]||0)+1;}
+  const topO=Object.entries(origins).sort((a,b)=>b[1]-a[1])[0];
+  const types={};
+  for(const m of members){if(!NM[m])continue;const t=NM[m].type||'?';types[t]=(types[t]||0)+1;}
+  const topT=Object.entries(types).sort((a,b)=>b[1]-a[1])[0]?.[0]||'?';
+  const names=members.filter(m=>NM[m]&&['concept','paper','essay'].includes(NM[m].type))
+    .sort((a,b)=>a.length-b.length).filter(n=>n.length<35).slice(0,2);
+  let p=[];
+  if(topO&&topO[1]>members.length*0.5)p.push(topO[0]+'-heavy');
+  p.push(topT);
+  if(names.length)p.push('· '+names.join(', '));
+  return p.join(' ');
+}
+function nl(id){return `<span class="nl" data-id="${esc(id)}">${esc(id)}</span>`;}
+function cl(cmd,disp){return `<span class="cl" data-cmd="${esc(cmd)}">${esc(disp||cmd)}</span>`;}
+function os(origin){const c=oc(origin);const t=Array.isArray(origin)?origin.join('+'):origin;return `<span style="color:${c}">${esc(t)}</span>`;}
+function HR(){return '='.repeat(60)+'\n';}
 
-  menu.querySelectorAll('.edge-filter').forEach(cb => {
-    cb.addEventListener('change', applyEdgeFilter);
-  });
+function parseFlags(args){
+  let origin=null,type=null,full=false,verbose=false,rest=[];
+  for(let i=0;i<args.length;i++){
+    if(args[i]==='--origin'&&i+1<args.length){origin=args[++i];}
+    else if(args[i]==='--type'&&i+1<args.length){type=args[++i];}
+    else if(args[i]==='--full'){full=true;}
+    else if(args[i]==='--verbose'){verbose=true;}
+    else rest.push(args[i]);
+  }
+  return{origin,type,full,verbose,rest};
+}
 
-  // Legend
-  const legend = d3.select('#legend');
-  let activeCluster = null;
+async function loadData(){
+  const resp=await fetch('graph-data.json');
+  const data=await resp.json();
+  NM={};for(const n of data.nodes)NM[n.id]=n;
+  adj={};EL=[];const seen=new Set();
+  for(const e of data.edges){
+    if(!NM[e.source]||!NM[e.target])continue;
+    const key=`${e.source}|${e.target}|${e.predicate||''}`;
+    if(seen.has(key))continue;seen.add(key);
+    if(!adj[e.source])adj[e.source]=new Set();
+    if(!adj[e.target])adj[e.target]=new Set();
+    adj[e.source].add(e.target);adj[e.target].add(e.source);
+    EL.push(e);
+  }
+  comms={};NC={};
+  if(data.communities){
+    for(const[k,v]of Object.entries(data.communities))comms[parseInt(k)]=v;
+    for(const[cid,members]of Object.entries(comms))
+      for(const nid of members)NC[nid]=parseInt(cid);
+  }
+}
 
-  const clusterSizes = {};
-  data.nodes.forEach(n => { clusterSizes[n.cluster] = (clusterSizes[n.cluster] || 0) + 1; });
-  const allClusters = Object.entries(clusterSizes)
-    .sort((a, b) => b[1] - a[1]);
+// === COMMAND HANDLERS ===
 
-  allClusters.forEach(([cluster, size]) => {
-    const color = data.colors[cluster] || '#aaa';
-    const item = legend.append('div')
-      .attr('class', 'legend-item')
-      .on('click', () => {
-        if (activeCluster === cluster) {
-          activeCluster = null;
-          node.style('opacity', 1);
-          link.style('display', '');
-          applyEdgeFilter();
-          legend.selectAll('.legend-item').classed('dimmed', false);
-        } else {
-          activeCluster = cluster;
-          node.style('opacity', d => d.cluster === cluster ? 1 : 0.08);
-          link.style('display', l => {
-            if (!enabledPreds.has(l.predicate)) return 'none';
-            const s = l.source.cluster || data.nodes.find(n => n.id === l.source)?.cluster;
-            const t = l.target.cluster || data.nodes.find(n => n.id === l.target)?.cluster;
-            return (s === cluster || t === cluster) ? '' : 'none';
-          });
-          link.filter(function() { return this.style.display !== 'none'; })
-            .attr('stroke-opacity', 0.6);
-          legend.selectAll('.legend-item').classed('dimmed', true);
-          item.classed('dimmed', false);
+function cmdExplore(origin,type,full){
+  let vs=new Set(Object.keys(NM));const filters=[];
+  if(origin){const os2=fByO(origin);if(!os2.size)return{html:`Error: no nodes with origin '${esc(origin)}'. Valid: ${validOrigins().join(', ')}\n`,hl:[]};vs=new Set([...vs].filter(x=>os2.has(x)));filters.push(origin);}
+  if(type){const ts=fByT(type);if(!ts.size)return{html:`Error: no nodes with type '${esc(type)}'. Valid: ${validTypes().join(', ')}\n`,hl:[]};vs=new Set([...vs].filter(x=>ts.has(x)));filters.push(type);}
+  const filtered=filters.length>0;const fl=filters.join(', ');
+  const tc={};for(const n of Object.values(NM)){tc[n.type]=(tc[n.type]||0)+1;}
+  const oc2={};for(const n of Object.values(NM))for(const o of olist(n))oc2[o]=(oc2[o]||0)+1;
+  const dr=[...vs].sort((a,b)=>deg(b)-deg(a));
+  let o='';
+  o+=HR();
+  o+=filtered?`<span class="hdr">LUMEN'S MIRROR — HOME (filtered: ${esc(fl)})</span>\n`:'<span class="hdr">LUMEN\'S MIRROR — HOME</span>\n';
+  o+=HR()+'\n';
+  o+='An analytical graph of Lumen\'s conceptual vocabulary — extracted\nfrom prose, poetry, fiction, and archival material.\nSources: prose, weird, poetry, nemul, fiction, descent, language, nature, reading, historian.\n';
+  if(filtered)o+=`\n${vs.size} nodes (of ${Object.keys(NM).length} total) · ${EL.length} edges\n`;
+  else o+=`\n${Object.keys(NM).length} nodes · ${EL.length} edges\n`;
+  o+=`Node types: ${Object.entries(tc).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([t,c])=>`${t}(${c})`).join(', ')}\n`;
+  o+=`Origins: ${Object.entries(oc2).sort((a,b)=>b[1]-a[1]).map(([oo,c])=>`${os(oo)}(${c})`).join(', ')}\n`;
+  if(!type){
+    o+=`\n--- ${Object.keys(comms).length} COMMUNITIES ---\n\n`;
+    for(const cid of Object.keys(comms).map(Number).sort((a,b)=>a-b)){
+      const members=comms[cid];
+      let ofrac='';
+      if(origin){const fm=members.filter(m=>vs.has(m));ofrac=` (${fm.length} from ${esc(origin)})`;}
+      const lab=clabel(members);
+      const ds=[...members].sort((a,b)=>deg(b)-deg(a));
+      o+=`  ${cl('community '+cid,'C'+cid)} — ${members.length} nodes${ofrac}  [${esc(lab)}]\n`;
+      o+=`    top: ${ds.slice(0,5).map(m=>nl(m)).join(', ')}\n\n`;
+    }
+  }
+  if(type){
+    const toc={};for(const nid of vs)for(const oo of olist(NM[nid]))toc[oo]=(toc[oo]||0)+1;
+    const tcc={};for(const nid of vs){const c=NC[nid]??'?';tcc[c]=(tcc[c]||0)+1;}
+    o+=`\n--- ${type.toUpperCase()} BREAKDOWN ---\n\n`;
+    o+=`  Origins: ${Object.entries(toc).sort((a,b)=>b[1]-a[1]).map(([oo,c])=>`${os(oo)}(${c})`).join(', ')}\n`;
+    o+=`  Communities: ${Object.entries(tcc).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`C${c}(${n})`).join(', ')}\n`;
+    const PL=15;
+    if(vs.size>PL&&!full){
+      o+=`\n--- TOP ${PL} (of ${vs.size}, by degree) ---\n\n`;
+      for(const nid of dr.slice(0,PL)){const n=NM[nid];o+=`  ${nl(nid)} (deg=${deg(nid)}, C${NC[nid]??'?'}, origin=${os(n.origin)})\n`;}
+      let fs=` --type ${type}`;if(origin)fs+=` --origin ${origin}`;
+      o+=`\n  ${vs.size-PL} more — ${cl('explore'+fs+' --full','see all?')}\n`;
+    }else{
+      o+=`\n--- ALL ${vs.size} (by degree) ---\n\n`;
+      for(const nid of dr){const n=NM[nid];o+=`  ${nl(nid)} (deg=${deg(nid)}, C${NC[nid]??'?'}, origin=${os(n.origin)})\n`;}
+    }
+  }else{
+    o+=filtered?`--- MOST CONNECTED (${esc(fl)} nodes) ---\n\n`:'--- MOST CONNECTED ---\n\n';
+    for(const nid of dr.slice(0,5)){const n=NM[nid];o+=`  ${nl(nid)} (${n.type}, deg=${deg(nid)})\n`;}
+  }
+  o+='\n--- TRY ---\n\n';
+  if(filtered){
+    const tn=dr[0]||'Lumen';const tc2=NC[tn]||0;
+    const of2=origin?` --origin ${origin}`:'';
+    o+=`  ${cl('search interval dynamics'+of2)}\n  ${cl('node '+tn)}\n  ${cl('community '+tc2+of2)}\n`;
+  }else{
+    o+=`  ${cl('search interval dynamics')}\n  ${cl('node Lumen')}\n  ${cl('community 0')}\n  ${cl('crossings')}\n  ${cl('brief Lumen')}\n`;
+  }
+  o+='\n--- NAVIGATION ---\n';
+  o+=`  Looking for something?        → ${cl('search <query>','search ...')}\n`;
+  o+=`  Browse by topic cluster?      → ${cl('community <id>','community ...')}\n`;
+  o+=`  Deep dive on one thing?       → ${cl('node <name>','node ...')}\n`;
+  o+=`  Pre-writing reference card?   → ${cl('brief <name>','brief ...')}\n`;
+  o+=`  What's near X?                → ${cl('subgraph <name> --hops 1','subgraph ...')}\n`;
+  o+=`  Unexpected connections?       → ${cl('surprise <name>','surprise ...')}\n`;
+  o+=`  How does X connect to Y?      → ${cl('path <from> -- <to>','path ...')}\n`;
+  o+=`  Concepts across sources?      → ${cl('crossings')}\n`;
+  o+=`  Timeline of a source?         → ${cl('timeline <origin>','timeline ...')}\n`;
+  o+=`  Compare two sources?          → ${cl('overlap <s1> <s2>','overlap ...')}\n`;
+  o+=`  Filter by source?             → ${cl('explore --origin <name>','explore --origin ...')}\n`;
+  o+=`  Filter by node type?          → ${cl('explore --type <type>','explore --type ...')}\n`;
+  o+=`  All commands?                 → ${cl('help')}\n`;
+  if(filtered)o+=`  Clear filters?                → ${cl('explore')}\n`;
+  return{html:o,hl:[...vs]};
+}
+
+function cmdCommunity(cidStr,origin,type,page){
+  page=page||1;
+  const cid=parseInt(cidStr);
+  if(isNaN(cid))return{html:`Error: community id must be a number, got '${esc(cidStr)}'\n`,hl:[]};
+  if(!comms[cid])return{html:`Error: community ${cid} not found. Valid: ${Object.keys(comms).map(Number).sort((a,b)=>a-b).join(', ')}\n`,hl:[]};
+  const members=comms[cid];const lab=clabel(members);
+  const tc={};for(const m of members){if(!NM[m])continue;const t=NM[m].type;tc[t]=(tc[t]||0)+1;}
+  const oc2={};for(const m of members){if(!NM[m])continue;for(const oo of olist(NM[m]))oc2[oo]=(oc2[oo]||0)+1;}
+  let dm=[...members];
+  if(origin){const os2=fByO(origin);dm=dm.filter(m=>os2.has(m));}
+  if(type){const ts=fByT(type);dm=dm.filter(m=>ts.has(m));}
+  let crossEdges=0;const crossTargets={};
+  for(const e of EL){
+    const sc=NC[e.source],tc2=NC[e.target];
+    if(sc===cid&&tc2!==undefined&&tc2!==cid){crossEdges++;crossTargets[tc2]=(crossTargets[tc2]||0)+1;}
+    else if(tc2===cid&&sc!==undefined&&sc!==cid){crossEdges++;crossTargets[sc]=(crossTargets[sc]||0)+1;}
+  }
+  const ds=[...dm].sort((a,b)=>deg(b)-deg(a));
+  const PS=10,total=ds.length,pages=Math.max(1,Math.ceil(total/PS));
+  page=Math.max(1,Math.min(page,pages));
+  const start=(page-1)*PS,shown=ds.slice(start,start+PS);
+  let o='';o+=HR();
+  const fp=[];if(origin)fp.push('origin='+origin);if(type)fp.push('type='+type);
+  if(fp.length)o+=`<span class="hdr">COMMUNITY C${cid} — ${members.length} nodes (${dm.length} matching ${fp.join(', ')})</span>  [${esc(lab)}]\n`;
+  else o+=`<span class="hdr">COMMUNITY C${cid} — ${members.length} nodes</span>  [${esc(lab)}]\n`;
+  o+=HR();
+  o+=`\nTypes: ${Object.entries(tc).sort((a,b)=>b[1]-a[1]).map(([t,c])=>`${t}(${c})`).join(', ')}\n`;
+  o+=`Origins: ${Object.entries(oc2).sort((a,b)=>b[1]-a[1]).map(([oo,c])=>`${os(oo)}(${c})`).join(', ')}\n`;
+  if(Object.keys(crossTargets).length){
+    const bridges=Object.entries(crossTargets).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([c,n])=>`${cl('community '+c,'C'+c)}(${n})`).join(', ');
+    o+=`Cross-edges: ${crossEdges} total — bridges to ${bridges}\n`;
+  }
+  o+=`\n--- NODES (by degree) — page ${page}/${pages} ---\n\n`;
+  for(const m of shown){
+    if(!NM[m])continue;
+    const n=NM[m];let skel=n.skeleton||n.summary||'';if(skel.length>80)skel=skel.slice(0,77)+'...';
+    o+=`  [${esc(n.type).padEnd(12)}] ${nl(m)}\n`;
+    o+=`               deg=${deg(m)}  origin=${os(n.origin)}  ${esc(skel)}\n`;
+  }
+  o+='\n--- NAVIGATION ---\n';
+  const cflags=(origin?' --origin '+origin:'')+(type?' --type '+type:'');
+  if(page<pages)o+=`  Next page?                    → ${cl('community '+cid+cflags+' '+(page+1))}\n`;
+  if(page>1)o+=`  Previous page?                → ${cl('community '+cid+cflags+' '+(page-1))}\n`;
+  o+=`  Deep dive on one node?        → ${cl('node <name>','node ...')}\n`;
+  o+=`  What's near a node?           → ${cl('subgraph <name> --hops 1','subgraph ...')}\n`;
+  o+=`  Filter by source?             → ${cl('community '+cid+' --origin <name>','community '+cid+' --origin ...')}\n`;
+  o+=`  Looking for something else?   → ${cl('search <query>','search ...')}\n`;
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  return{html:o,hl:shown};
+}
+
+function cmdNode(name,page){
+  page=page||1;
+  const r=resolve(name);
+  if(!r)return{html:`Error: no node matching '${esc(name)}'\n  Try: ${cl('search '+name)}\n`,hl:[]};
+  const n=NM[r];const d=deg(r);const cid=NC[r];
+  let o='';o+=HR();o+=`<span class="hdr">NODE: ${nl(r)}</span>\n`;o+=HR();
+  o+=`\n  type:    ${esc(n.type||'?')}\n  origin:  ${os(n.origin)}\n  degree:  ${d}\n`;
+  if(cid!==undefined)o+=`  community: ${cl('community '+cid,'C'+cid)}\n`;
+  o+=`\n--- SUMMARY ---\n  ${esc(n.summary||'no summary')}\n`;
+  const allConns=[];
+  for(const e of EL){
+    if(e.predicate==='cosine_similarity')continue;
+    if(e.source===r)allConns.push({nb:e.target,pred:e.predicate,dir:'→'});
+    else if(e.target===r)allConns.push({nb:e.source,pred:e.predicate,dir:'←'});
+  }
+  if(allConns.length){
+    const PS=10,total=allConns.length,pages=Math.max(1,Math.ceil(total/PS));
+    page=Math.max(1,Math.min(page,pages));
+    const start=(page-1)*PS,shown=allConns.slice(start,start+PS);
+    o+=`\n--- CURATED CONNECTIONS (${total}) — page ${page}/${pages} ---\n\n`;
+    for(const{nb,pred,dir}of shown)o+=`  ${dir} ${esc(pred)}: ${nl(nb)}\n`;
+  }
+  o+='\n--- NAVIGATION ---\n';
+  if(allConns.length){
+    const PS=10,pages=Math.max(1,Math.ceil(allConns.length/PS));
+    if(page<pages)o+=`  More connections?             → ${cl('node '+r+' '+(page+1))}\n`;
+    if(page>1)o+=`  Previous connections?         → ${cl('node '+r+' '+(page-1))}\n`;
+    o+=`  All connections (flat list)?  → ${cl('connections '+r)}\n`;
+    const fn=allConns[0].nb;o+=`  Follow a connection?          → ${cl('node '+fn)}\n`;
+  }
+  o+=`  What's nearby?                → ${cl('subgraph '+r+' --hops 1')}\n`;
+  o+=`  Unexpected connections?       → ${cl('surprise '+r)}\n`;
+  o+=`  Similar concepts?             → ${cl('similar '+r)}\n`;
+  o+=`  Pre-writing card?             → ${cl('brief '+r)}\n`;
+  if(cid!==undefined)o+=`  Others in this cluster?       → ${cl('community '+cid)}\n`;
+  o+=`  Structural neighbors?         → ${cl('jaccard '+r)}\n`;
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  const hlIds=[r,...(adj[r]?[...adj[r]]:[])];
+  return{html:o,hl:hlIds};
+}
+
+function cmdSubgraph(args){
+  let seeds=[],hops=1,verbose=false;
+  for(let i=0;i<args.length;i++){
+    if(args[i]==='--hops'&&i+1<args.length){hops=Math.min(parseInt(args[++i]),2);}
+    else if(args[i]==='--verbose')verbose=true;
+    else seeds.push(args[i]);
+  }
+  if(!seeds.length)return{html:'Usage: subgraph <seed> [seed2...] [--hops N]\n',hl:[]};
+  const rs=[];
+  for(const s of seeds){const r=resolve(s);if(r)rs.push(r);}
+  if(!rs.length)return{html:'Error: no valid seeds found\n',hl:[]};
+  const layer={};for(const s of rs)layer[s]=0;
+  let frontier=[...rs];
+  for(let d=1;d<=hops;d++){
+    const next=[];
+    for(const node of frontier)for(const nb of(adj[node]||new Set()))if(!(nb in layer)){layer[nb]=d;next.push(nb);}
+    frontier=next;
+  }
+  const sgNodes=new Set(Object.keys(layer));
+  const sgEdges=EL.filter(e=>sgNodes.has(e.source)&&sgNodes.has(e.target)&&e.predicate!=='cosine_similarity');
+  const totalNodes=Object.keys(NM).length;
+  const covPct=totalNodes?Math.round(sgNodes.size/totalNodes*100):0;
+  const covNote=covPct>40?`  (${covPct}% of graph)`:'';
+  let o='';o+=HR();
+  o+=`<span class="hdr">SUBGRAPH: ${rs.map(s=>nl(s)).join(', ')} — ${hops} hop(s)</span>\n`;
+  o+=HR();o+=`\n${sgNodes.size} nodes · ${sgEdges.length} curated edges${covNote}\n`;
+  const COMPACT_CAP=20;
+  for(let d=0;d<=hops;d++){
+    const label=d===0?'SEED':`HOP ${d}`;
+    const ln=Object.entries(layer).filter(([,dd])=>dd===d).map(([id])=>id).sort((a,b)=>deg(b)-deg(a));
+    const compact=d>=2;
+    o+=`\n--- ${label} (${ln.length} nodes) ---\n\n`;
+    const showNodes=compact?ln.slice(0,COMPACT_CAP):ln;
+    for(const nid of showNodes){
+      if(!NM[nid])continue;
+      const n=NM[nid];const localDeg=[...(adj[nid]||[])].filter(nb=>sgNodes.has(nb)).length;
+      if(compact){
+        o+=`  [${esc(n.type).padEnd(12)}] ${nl(nid)}  deg ${localDeg}/${deg(nid)}\n`;
+      }else{
+        const marker=rs.includes(nid)?' *':'';
+        let skel=n.skeleton||n.summary||'';if(skel.length>80)skel=skel.slice(0,77)+'...';
+        o+=`  [${esc(n.type).padEnd(12)}] ${nl(nid)}${marker}\n`;
+        o+=`               deg ${localDeg}/${deg(nid)}  ${esc(skel)}\n`;
+      }
+    }
+    if(compact&&ln.length>COMPACT_CAP)o+=`  ... and ${ln.length-COMPACT_CAP} more (use ${cl('node <name>','node ...')} to inspect)\n`;
+  }
+  if(sgEdges.length){
+    const pg2={};for(const e of sgEdges){if(!pg2[e.predicate])pg2[e.predicate]=[];pg2[e.predicate].push(e);}
+    const edgeLimit=verbose?25:10;
+    o+=`\n--- EDGES${verbose?' (verbose)':''} ---\n\n`;
+    for(const[pred,elist]of Object.entries(pg2).sort((a,b)=>b[1].length-a[1].length)){
+      o+=`  ${esc(pred)} (${elist.length}):\n`;
+      const shown=elist.slice(0,edgeLimit);
+      for(const e of shown)o+=`    ${nl(e.source)} → ${nl(e.target)}\n`;
+      if(elist.length>edgeLimit)o+=`    ... and ${elist.length-edgeLimit} more\n`;
+    }
+  }
+  o+='\n--- NAVIGATION ---\n';
+  for(const s of rs)o+=`  Back to seed detail?          → ${cl('node '+s)}\n`;
+  o+=`  Deep dive on any node?        → ${cl('node <name>','node ...')}\n`;
+  if(hops<2)o+=`  Expand the neighborhood?      → ${cl('subgraph '+rs[0]+' --hops '+(hops+1))}\n`;
+  if(!verbose)o+=`  See all edges?                → ${cl('subgraph '+rs.join(' ')+' --hops '+hops+' --verbose')}\n`;
+  o+=`  Looking for something else?   → ${cl('search <query>','search ...')}\n`;
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  return{html:o,hl:[...sgNodes]};
+}
+
+function cmdSearch(query,origin,type){
+  const ql=query.toLowerCase();
+  let allowed=new Set(Object.keys(NM));
+  if(origin){allowed=new Set([...allowed].filter(x=>fByO(origin).has(x)));}
+  if(type){allowed=new Set([...allowed].filter(x=>fByT(type).has(x)));}
+  const results=[];
+  for(const[nid,n]of Object.entries(NM)){
+    if(!allowed.has(nid))continue;
+    let score=0;
+    if(ql===nid.toLowerCase())score=100;
+    else if(nid.toLowerCase().includes(ql))score=50;
+    if((n.summary||'').toLowerCase().includes(ql))score+=10;
+    if((n.skeleton||'').toLowerCase().includes(ql))score+=5;
+    if(score>0)results.push({nid,n,score});
+  }
+  results.sort((a,b)=>b.score-a.score||a.nid.localeCompare(b.nid));
+  let o='';o+=HR();
+  const fp=[];if(origin)fp.push('origin: '+origin);if(type)fp.push('type: '+type);
+  const fs=fp.length?` (${fp.join(', ')})`:'';
+  o+=`<span class="hdr">SEARCH: '${esc(query)}'${fs} — ${results.length} results</span>\n`;
+  o+=HR();o+='  (searches node names, summaries, and skeletons)\n';
+  const shown=results.slice(0,10);
+  if(!shown.length){o+='\nNo matches found.\n';}
+  else{
+    for(const{nid,n}of shown){
+      const skel=n.skeleton||n.summary||'no summary';
+      o+=`\n  [${esc(n.type)}] ${nl(nid)}    deg=${deg(nid)}  C${NC[nid]??'?'}  origin=${os(n.origin)}\n`;
+      o+=`    ${esc(skel)}\n`;
+      const curated=[];const seen2=new Set();
+      for(const e of EL){
+        if(e.predicate==='cosine_similarity')continue;
+        let entry='';
+        if(e.source===nid)entry=`→ ${e.predicate}: ${e.target}`;
+        else if(e.target===nid)entry=`← ${e.predicate}: ${e.source}`;
+        if(entry&&!seen2.has(entry)){seen2.add(entry);curated.push(entry);}
+      }
+      for(const ce of curated.slice(0,5))o+=`    ${esc(ce)}\n`;
+      if(curated.length>5)o+=`    (+ ${curated.length-5} more curated edges)\n`;
+    }
+    if(results.length>10)o+=`\n  ... and ${results.length-10} more results\n`;
+  }
+  o+='\n--- NAVIGATION ---\n';
+  if(shown.length)o+=`  Deep dive on a result?        → ${cl('node '+shown[0].nid)}\n`;
+  o+=`  Filter by source?             → ${cl('search '+query+' --origin <name>','search '+query+' --origin ...')}\n`;
+  o+=`  Filter by node type?          → ${cl('search '+query+' --type <type>','search '+query+' --type ...')}\n`;
+  o+=`  Refine or new search?         → ${cl('search <query>','search ...')}\n`;
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  return{html:o,hl:shown.map(x=>x.nid)};
+}
+
+function cmdPath(args){
+  const di=args.indexOf('--');
+  let fromName,toName;
+  if(di>=0){fromName=args.slice(0,di).join(' ');toName=args.slice(di+1).join(' ');}
+  else if(args.length===2){fromName=args[0];toName=args[1];}
+  else return{html:'Usage: path <from> -- <to>\n  Use -- to separate multi-word node names\n',hl:[]};
+  const fn=resolve(fromName),tn=resolve(toName);
+  if(!fn)return{html:`Error: no node matching '${esc(fromName)}'\n`,hl:[]};
+  if(!tn)return{html:`Error: no node matching '${esc(toName)}'\n`,hl:[]};
+  const visited=new Set([fn]);const queue=[[fn,[fn]]];let found=null;
+  while(queue.length){
+    const[cur,path]=queue.shift();
+    if(cur===tn){found=path;break;}
+    for(const nb of(adj[cur]||new Set()))if(!visited.has(nb)){visited.add(nb);queue.push([nb,[...path,nb]]);}
+  }
+  let o='';o+=HR();o+=`<span class="hdr">PATH: ${nl(fn)} → ${nl(tn)}</span>\n`;o+=HR();
+  if(!found){o+='\nNo path found between these nodes.\n';}
+  else{
+    o+=`\nLength: ${found.length-1} hops\n\n`;
+    for(let i=0;i<found.length;i++){
+      const nid=found[i];const n=NM[nid];
+      if(!n)continue;
+      const prefix=i===0?'START':i===found.length-1?'END  ':`  ${String(i).padEnd(3)}`;
+      let skel=n.skeleton||n.summary||'';if(skel.length>60)skel=skel.slice(0,57)+'...';
+      o+=`  ${prefix} [${esc(n.type).padEnd(12)}] ${nl(nid)}\n               ${esc(skel)}\n`;
+    }
+  }
+  o+='\n--- NAVIGATION ---\n';
+  if(found){
+    o+=`  Inspect the start?            → ${cl('node '+fn)}\n`;
+    o+=`  Inspect the end?              → ${cl('node '+tn)}\n`;
+    o+=`  What's around the start?      → ${cl('subgraph '+fn+' --hops '+Math.max(1,Math.floor((found.length-1)/2)))}\n`;
+  }
+  o+=`  Looking for something else?   → ${cl('search <query>','search ...')}\n`;
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  return{html:o,hl:found||[]};
+}
+
+function cmdGaps(name){
+  if(!validOrigins().includes(name.toLowerCase())){
+    return{html:`Error: '${esc(name)}' is not a known origin.\n  Valid origins: ${validOrigins().join(', ')}\n\n  gaps shows where a source's concepts have and haven't reached.\n  For a single node, try: ${cl('subgraph <name> --hops 1','subgraph ...')}\n`,hl:[]};
+  }
+  const originSet=fByO(name);
+  const connected=new Set();
+  for(const nid of originSet)for(const nb of(adj[nid]||new Set()))connected.add(nb);
+  for(const nid of originSet)connected.add(nid);
+  let o='';o+=HR();o+=`<span class="hdr">GAPS: ${esc(name)} (${originSet.size} nodes)</span>\n`;o+=HR();
+  let bigGapCid=null,bigGapPct=100;
+  if(Object.keys(comms).length){
+    o+='\n--- COMMUNITY PRESENCE ---\n\n';
+    for(const cid of Object.keys(comms).map(Number).sort((a,b)=>a-b)){
+      const members=new Set(comms[cid]);const present=new Set([...members].filter(m=>originSet.has(m)));
+      const pct=members.size?present.size/members.size*100:0;
+      const filled=Math.round(pct/5);const empty=20-filled;
+      const lab=clabel([...members]);
+      o+=`  ${cl('community '+cid,'C'+cid)} ${'█'.repeat(filled)}${'░'.repeat(empty)} ${present.size}/${members.size} nodes (${Math.round(pct)}%)  [${esc(lab)}]\n`;
+      if(pct<bigGapPct){bigGapPct=pct;bigGapCid=cid;}
+    }
+    const lowPresence=[];
+    for(const cid of Object.keys(comms).map(Number).sort((a,b)=>a-b)){
+      const members=new Set(comms[cid]);const present=[...members].filter(m=>originSet.has(m));
+      const pct=members.size?present.length/members.size*100:0;
+      if(pct<15&&members.size>0){
+        const unconnected=[...members].filter(m=>!connected.has(m)).sort((a,b)=>deg(b)-deg(a));
+        lowPresence.push({cid,pct,unconnected});
+      }
+    }
+    if(lowPresence.length){
+      lowPresence.sort((a,b)=>(comms[b.cid]||[]).length-(comms[a.cid]||[]).length);
+      const MAX_DETAILED=5;
+      o+='\n--- BLIND SPOTS (communities with <15% presence) ---\n\n';
+      for(let i=0;i<lowPresence.length;i++){
+        const{cid:ci,pct,unconnected}=lowPresence[i];
+        const sz=(comms[ci]||[]).length;
+        if(i<MAX_DETAILED){
+          o+=`  ${cl('community '+ci,'C'+ci)} (${Math.round(pct)}% presence, ${sz} nodes)\n`;
+          if(unconnected.length){
+            o+='    top unconnected:\n';
+            for(const nid of unconnected.slice(0,3)){
+              if(!NM[nid])continue;
+              o+=`      [${esc(NM[nid].type)}] ${nl(nid)} (deg=${deg(nid)}, origin=${os(NM[nid].origin)})\n`;
+            }
+          }
+          o+='\n';
+        }else{
+          o+=`  ${cl('community '+ci,'C'+ci)} (${Math.round(pct)}%, ${sz} nodes)\n`;
         }
-      });
-    item.append('div').attr('class', 'legend-dot').style('background', color);
-    const label = cluster.length > 30 ? cluster.slice(0, 28) + '…' : cluster;
-    item.append('span').text(`${label} (${size})`);
-  });
-
-  // Search
-  const searchInput = document.getElementById('search-input');
-  searchInput.addEventListener('input', () => {
-    const q = searchInput.value.toLowerCase();
-    if (!q) {
-      node.style('opacity', 1);
-      link.style('opacity', 0.3);
-      return;
-    }
-    node.style('opacity', d =>
-      d.id.toLowerCase().includes(q) || (d.summary || '').toLowerCase().includes(q) ? 1 : 0.1
-    );
-    link.style('opacity', 0.05);
-  });
-
-  // Reset
-  document.getElementById('btn-reset').addEventListener('click', () => {
-    svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
-    node.style('opacity', 1);
-    link.style('display', '');
-    link.attr('stroke-opacity', d => d.predicate === 'contrasts_with' ? 0.6 : d.predicate === 'explores' ? 0.5 : 0.4);
-    menu.querySelectorAll('.edge-filter').forEach(cb => { cb.checked = true; });
-    enabledPreds.clear();
-    Object.keys(edgeLabels).forEach(p => enabledPreds.add(p));
-    activeCluster = null;
-    legend.selectAll('.legend-item').classed('dimmed', false);
-    searchInput.value = '';
-    closePanel();
-  });
-
-  function dragstarted(event) {
-    if (!event.active) simulation.alphaTarget(0.3).restart();
-    event.subject.fx = event.subject.x;
-    event.subject.fy = event.subject.y;
-  }
-  function dragged(event) {
-    event.subject.fx = event.x;
-    event.subject.fy = event.y;
-  }
-  function dragended(event) {
-    if (!event.active) simulation.alphaTarget(0);
-    event.subject.fx = null;
-    event.subject.fy = null;
-  }
-
-  function openPanel(d, data) {
-    document.getElementById('panel').classList.add('open');
-    document.getElementById('panel-title').textContent = d.id;
-    const tag = document.getElementById('panel-cluster');
-    tag.textContent = d.cluster;
-    tag.style.background = d.color + '33';
-    tag.style.color = d.color;
-    document.getElementById('panel-summary').textContent = d.summary || '';
-
-    const srcEl = document.getElementById('panel-source');
-    if (d.source_urls && d.source_urls.length > 0) {
-      srcEl.innerHTML = d.source_urls.map((url, i) =>
-        `<a href="${url}" target="_blank">${d.source_files[i]}</a>`
-      ).join('<br>');
-      srcEl.style.display = '';
-    } else {
-      srcEl.style.display = 'none';
-    }
-
-    const connections = data.links.filter(l =>
-      (l.source.id || l.source) === d.id || (l.target.id || l.target) === d.id
-    );
-    const list = document.getElementById('connections-list');
-    list.innerHTML = '';
-    connections.forEach(c => {
-      const other = (c.source.id || c.source) === d.id
-        ? (c.target.id || c.target)
-        : (c.source.id || c.source);
-      const div = document.createElement('div');
-      div.className = 'connection-item';
-      div.innerHTML = `${other} <span class="pred">${c.predicate}</span>`;
-      div.addEventListener('click', () => {
-        const targetNode = data.nodes.find(n => n.id === other);
-        if (targetNode) openPanel(targetNode, data);
-      });
-      list.appendChild(div);
-    });
-
-    const semList = document.getElementById('semantic-list');
-    semList.innerHTML = '';
-    if (d.neighbors && d.neighbors.length > 0) {
-      d.neighbors.slice(0, 8).forEach(n => {
-        const div = document.createElement('div');
-        div.className = 'connection-item';
-        const pct = Math.round(n.score * 100);
-        div.innerHTML = `${n.id} <span class="pred">${pct}%</span>`;
-        div.addEventListener('click', () => {
-          const targetNode = data.nodes.find(nd => nd.id === n.id);
-          if (targetNode) openPanel(targetNode, data);
-        });
-        semList.appendChild(div);
-      });
+      }
+      if(lowPresence.length>MAX_DETAILED)o+=`\n  (${lowPresence.length-MAX_DETAILED} smaller gaps shown in summary only)\n`;
     }
   }
+  o+='\n--- NAVIGATION ---\n';
+  if(bigGapCid!==null)o+=`  Explore your biggest gap?     → ${cl('community '+bigGapCid)}\n`;
+  o+=`  Filter by this source?        → ${cl('explore --origin '+name)}\n`;
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  return{html:o,hl:[...originSet]};
+}
 
-  function closePanel() {
-    document.getElementById('panel').classList.remove('open');
+function cmdJaccard(name){
+  const r=resolve(name);
+  if(!r)return{html:`Error: no node matching '${esc(name)}'\n  Try: ${cl('search '+name)}\n`,hl:[]};
+  const myNb=adj[r]||new Set();
+  if(!myNb.size)return{html:`Error: '${esc(r)}' has no neighbors — cannot compute Jaccard.\n`,hl:[]};
+  const curatedNb=new Set();
+  for(const e of EL){
+    if(e.predicate==='cosine_similarity')continue;
+    if(e.source===r)curatedNb.add(e.target);
+    else if(e.target===r)curatedNb.add(e.source);
   }
+  const scores=[];
+  for(const otherId of Object.keys(NM)){
+    if(otherId===r)continue;
+    const otherNb=adj[otherId]||new Set();
+    if(!otherNb.size)continue;
+    const inter=[...myNb].filter(x=>otherNb.has(x));
+    if(!inter.length)continue;
+    const union=new Set([...myNb,...otherNb]);
+    scores.push({nid:otherId,j:inter.length/union.size,inter:inter.length,union:union.size});
+  }
+  scores.sort((a,b)=>b.j-a.j);
+  const cid=NC[r]??'?';
+  let o='';o+=HR();
+  o+=`<span class="hdr">JACCARD: ${nl(r)}</span>\n`;o+=HR();
+  o+=`\n  node: ${nl(r)} (${esc(NM[r].type||'?')}, C${cid})\n`;
+  o+=`  neighbors: ${myNb.size}\n  curated edges: ${curatedNb.size}\n  nodes with shared neighbors: ${scores.length}\n`;
+  if(scores.length){
+    o+='\n--- TOP STRUCTURAL NEIGHBORS (by neighbor-set Jaccard) ---\n\n';
+    for(const{nid,j,inter,union:u}of scores.slice(0,15)){
+      if(!NM[nid])continue;
+      const ncid=NC[nid]??'?';
+      const mark=curatedNb.has(nid)?'●':'○';
+      o+=`  ${mark} J=${j.toFixed(3)}  [${esc(NM[nid].type)}] ${nl(nid)}  C${ncid}  (${inter}/${u} shared)\n`;
+    }
+    o+='\n  ● = curated edge exists  ○ = no curated edge\n';
+  }
+  const unconnected=scores.filter(s=>!curatedNb.has(s.nid)&&s.j>=0.05).slice(0,8);
+  if(unconnected.length){
+    o+='\n--- SUGGESTED EDGES (high Jaccard, no curated connection) ---\n\n';
+    for(const{nid,j,inter}of unconnected){
+      if(!NM[nid])continue;
+      const ncid=NC[nid]??'?';
+      const shared=[...(adj[r]||[])].filter(x=>(adj[nid]||new Set()).has(x)).sort((a,b)=>deg(b)-deg(a)).slice(0,3);
+      o+=`  J=${j.toFixed(3)}  [${esc(NM[nid].type)}] ${nl(nid)}  C${ncid}\n`;
+      o+=`          via: ${shared.map(s=>nl(s)).join(', ')}\n`;
+    }
+  }
+  o+='\n--- NAVIGATION ---\n';
+  if(scores.length)o+=`  Inspect top match?            → ${cl('node '+scores[0].nid)}\n`;
+  o+=`  Back to node detail?          → ${cl('node '+r)}\n`;
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  return{html:o,hl:[r,...scores.slice(0,15).map(x=>x.nid)]};
+}
+
+function getSimLookup(){
+  const sl={};
+  for(const e of EL){
+    if(e.predicate==='cosine_similarity'){
+      const key=[e.source,e.target].sort().join('|');
+      sl[key]=e.weight||0;
+    }
+  }
+  return sl;
+}
+
+function cmdSimilar(name,page){
+  page=page||1;
+  const r=resolve(name);
+  if(!r)return{html:`Error: no node matching '${esc(name)}'\n  Try: ${cl('search '+name)}\n`,hl:[]};
+  const simNb=[];
+  for(const e of EL){
+    if(e.predicate!=='cosine_similarity')continue;
+    if(e.source===r)simNb.push({nid:e.target,w:e.weight||0});
+    else if(e.target===r)simNb.push({nid:e.source,w:e.weight||0});
+  }
+  simNb.sort((a,b)=>b.w-a.w);
+  const PS=10,total=simNb.length,pages=Math.ceil(total/PS);
+  page=Math.max(1,Math.min(page,pages));
+  const start=(page-1)*PS,shown=simNb.slice(start,start+PS);
+  lastSimilar={name:r,page,total};
+  let o='';o+=HR();
+  o+=`<span class="hdr">SIMILAR: ${nl(r)} — page ${page}/${pages} (${total} total)</span>\n`;o+=HR();
+  if(!shown.length){o+='\nNo similarity edges found for this node.\n';}
+  else{
+    o+='\n';
+    for(const{nid,w}of shown){
+      if(!NM[nid])continue;
+      let skel=NM[nid].skeleton||NM[nid].summary||'';if(skel.length>50)skel=skel.slice(0,47)+'...';
+      o+=`  ${w.toFixed(3)}  [${esc(NM[nid].type).padEnd(12)}] ${nl(nid)}\n         ${esc(skel)}\n`;
+    }
+  }
+  o+='\n--- NAVIGATION ---\n';
+  if(page<pages)o+=`  Next page?                    → ${cl('similar '+r+' '+(page+1))}\n`;
+  if(page>1)o+=`  Previous page?                → ${cl('similar '+r+' '+(page-1))}\n`;
+  o+=`  Back to node detail?          → ${cl('node '+r)}\n`;
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  return{html:o,hl:[r,...shown.map(x=>x.nid)]};
+}
+
+function cmdConnections(name,page){
+  page=page||1;
+  const r=resolve(name);
+  if(!r)return{html:`Error: no node matching '${esc(name)}'\n  Try: ${cl('search '+name)}\n`,hl:[]};
+  const conns=[];
+  for(const e of EL){
+    if(e.predicate==='cosine_similarity')continue;
+    if(e.source===r)conns.push({nb:e.target,pred:e.predicate,dir:'→'});
+    else if(e.target===r)conns.push({nb:e.source,pred:e.predicate,dir:'←'});
+  }
+  const PS=10,total=conns.length,pages=Math.max(1,Math.ceil(total/PS));
+  page=Math.max(1,Math.min(page,pages));
+  const start=(page-1)*PS,shown=conns.slice(start,start+PS);
+  let o='';o+=HR();
+  o+=`<span class="hdr">CONNECTIONS: ${nl(r)} — page ${page}/${pages} (${total} total)</span>\n`;o+=HR();
+  if(!shown.length){o+='\nNo curated connections.\n';}
+  else{
+    o+='\n';
+    for(const{nb,pred,dir}of shown)o+=`  ${dir} ${esc(pred)}: ${nl(nb)}\n`;
+  }
+  o+='\n--- NAVIGATION ---\n';
+  if(page<pages)o+=`  Next page?                    → ${cl('connections '+r+' '+(page+1))}\n`;
+  if(page>1)o+=`  Previous page?                → ${cl('connections '+r+' '+(page-1))}\n`;
+  o+=`  Back to node detail?          → ${cl('node '+r)}\n`;
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  return{html:o,hl:[r,...shown.map(x=>x.nb)]};
+}
+
+function cmdSurprise(name){
+  const r=resolve(name);
+  if(!r)return{html:`Error: no node matching '${esc(name)}'\n  Try: ${cl('search '+name)}\n`,hl:[]};
+  const sl=getSimLookup();
+  const curatedNb={};
+  for(const e of EL){
+    if(e.predicate==='cosine_similarity')continue;
+    if(e.source===r){if(!curatedNb[e.target])curatedNb[e.target]=[];curatedNb[e.target].push('→ '+e.predicate);}
+    else if(e.target===r){if(!curatedNb[e.source])curatedNb[e.source]=[];curatedNb[e.source].push('← '+e.predicate);}
+  }
+  const withSim=[],withoutSim=[];
+  for(const[nb,preds]of Object.entries(curatedNb)){
+    const key=[r,nb].sort().join('|');
+    const s=sl[key];
+    if(s!==undefined)withSim.push({nb,s,preds});
+    else withoutSim.push({nb,preds});
+  }
+  withSim.sort((a,b)=>a.s-b.s);
+  const highSimNoEdge=[];
+  for(const e of EL){
+    if(e.predicate!=='cosine_similarity')continue;
+    const other=e.source===r?e.target:e.target===r?e.source:null;
+    if(other&&!curatedNb[other])highSimNoEdge.push({nid:other,s:e.weight||0});
+  }
+  highSimNoEdge.sort((a,b)=>b.s-a.s);
+  const cid=NC[r]??'?';
+  let o='';o+=HR();o+=`<span class="hdr">SURPRISE: ${nl(r)}</span>\n`;o+=HR();
+  o+=`\n  node: ${nl(r)} (${esc(NM[r].type||'?')}, C${cid})\n`;
+  o+=`  curated neighbors: ${Object.keys(curatedNb).length}\n`;
+  o+=`  with similarity score: ${withSim.length}\n`;
+  if(withSim.length){
+    o+='\n--- UNEXPECTED CONNECTIONS (curated edge + low similarity) ---\n\n';
+    for(const{nb,s,preds}of withSim.slice(0,10)){
+      if(!NM[nb])continue;
+      const ncid=NC[nb]??'?';
+      o+=`  ${s.toFixed(3)}  [${esc(NM[nb].type)}] ${nl(nb)}  C${ncid}\n`;
+      for(const p of preds.slice(0,3))o+=`         ${esc(p)}\n`;
+    }
+  }else{
+    o+=`\n  No curated neighbors have similarity scores.\n  (Similarity edges cover ${Object.keys(sl).length} pairs in the graph.)\n`;
+  }
+  if(withoutSim.length)o+=`\n  (${withoutSim.length} curated neighbor(s) have no similarity score — cannot rank by surprise)\n`;
+  if(highSimNoEdge.length){
+    o+='\n--- SIMILAR BUT UNCONNECTED (high similarity, no curated edge) ---\n\n';
+    for(const{nid,s}of highSimNoEdge.slice(0,10)){
+      if(!NM[nid])continue;
+      o+=`  ${s.toFixed(3)}  [${esc(NM[nid].type)}] ${nl(nid)}  C${NC[nid]??'?'}\n`;
+    }
+  }
+  o+='\n--- NAVIGATION ---\n';
+  if(withSim.length)o+=`  Inspect a surprise?           → ${cl('node '+withSim[0].nb)}\n`;
+  if(highSimNoEdge.length)o+=`  Inspect an unconnected match? → ${cl('node '+highSimNoEdge[0].nid)}\n`;
+  o+=`  Structural view?              → ${cl('jaccard '+r)}\n`;
+  o+=`  Back to node detail?          → ${cl('node '+r)}\n`;
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  return{html:o,hl:[r,...withSim.slice(0,10).map(x=>x.nb),...highSimNoEdge.slice(0,10).map(x=>x.nid)]};
+}
+
+function cmdBrief(name){
+  const r=resolve(name);
+  if(!r)return{html:`Error: no node matching '${esc(name)}'\n  Try: ${cl('search '+name)}\n`,hl:[]};
+  const n=NM[r];const d=deg(r);const cid=NC[r]??'?';
+  const origins=olist(n);
+  const curated=[];
+  for(const e of EL){
+    if(e.predicate==='cosine_similarity')continue;
+    if(e.source===r)curated.push({nb:e.target,pred:e.predicate,dir:'→'});
+    else if(e.target===r)curated.push({nb:e.source,pred:e.predicate,dir:'←'});
+  }
+  curated.sort((a,b)=>deg(b.nb)-deg(a.nb));
+  const simNb=[];
+  for(const e of EL){
+    if(e.predicate!=='cosine_similarity')continue;
+    if(e.source===r)simNb.push({nid:e.target,w:e.weight||0});
+    else if(e.target===r)simNb.push({nid:e.source,w:e.weight||0});
+  }
+  simNb.sort((a,b)=>b.w-a.w);
+  const sl=getSimLookup();
+  let surpriseEdge=null;
+  for(const{nb,pred,dir}of curated){
+    const key=[r,nb].sort().join('|');
+    const s=sl[key];
+    const nbCid=NC[nb]??'?';
+    if(s!==undefined&&s<0.4&&nbCid!==cid){surpriseEdge={nb,pred,dir,s};break;}
+  }
+  let summary=n.summary||'no summary';
+  if(summary.length>160)summary=summary.slice(0,157)+'...';
+  let o=`<span class="hdr">BRIEF: ${nl(r)}</span>\n`;
+  o+=`  ${esc(n.type||'?')}  C${cid}  deg=${d}  sources: ${origins.length?origins.sort().join(', '):'?'}\n`;
+  o+=`  ${esc(summary)}\n`;
+  if(curated.length){
+    o+=`\n  Key connections (${Math.min(5,curated.length)} of ${curated.length}):\n`;
+    for(const{nb,pred,dir}of curated.slice(0,5))o+=`    ${dir} ${esc(pred)}: ${nl(nb)}\n`;
+  }
+  if(simNb.length){
+    o+=`\n  Similar (${Math.min(3,simNb.length)} of ${simNb.length}):\n`;
+    for(const{nid,w}of simNb.slice(0,3)){
+      if(!NM[nid])continue;
+      let skel=NM[nid].skeleton||NM[nid].summary||'';if(skel.length>50)skel=skel.slice(0,47)+'...';
+      o+=`    ${w.toFixed(3)}  ${nl(nid)} — ${esc(skel)}\n`;
+    }
+  }
+  if(surpriseEdge){
+    const{nb,pred,dir,s}=surpriseEdge;
+    o+=`\n  Surprise: ${dir} ${esc(pred)}: ${nl(nb)}  (cos=${s.toFixed(3)}, different cluster)\n`;
+  }
+  o+=`\n  → ${cl('node '+r)}  → ${cl('surprise '+r)}  → ${cl('subgraph '+r)}\n`;
+  return{html:o,hl:[r]};
+}
+
+function cmdCrossings(){
+  const multi=[];
+  for(const[nid,n]of Object.entries(NM)){
+    const origins=olist(n);
+    if(origins.length>=2)multi.push({nid,n,origins});
+  }
+  multi.sort((a,b)=>b.origins.length-a.origins.length||a.nid.localeCompare(b.nid));
+  let o='';o+=HR();
+  o+=`<span class="hdr">CROSSINGS — concepts that appear in multiple sources (${multi.length} found)</span>\n`;
+  o+=HR();
+  o+='  These are the most load-bearing ideas: they travel across\n  contexts rather than staying local to one exchange.\n\n';
+  if(!multi.length){o+='  No multi-source concepts found.\n';}
+  else{
+    for(const{nid,n,origins}of multi.slice(0,20)){
+      let skel=n.skeleton||n.summary||'';if(skel.length>70)skel=skel.slice(0,67)+'...';
+      o+=`  [${esc(n.type).padEnd(12)}] ${nl(nid)}  deg=${deg(nid)}\n`;
+      o+=`                 sources: ${origins.sort().map(oo=>os(oo)).join(', ')}\n`;
+      o+=`                 ${esc(skel)}\n\n`;
+    }
+    if(multi.length>20)o+=`  ... and ${multi.length-20} more\n`;
+  }
+  o+='--- NAVIGATION ---\n';
+  if(multi.length)o+=`  Inspect one?                  → ${cl('node '+multi[0].nid)}\n`;
+  o+=`  How two sources overlap?      → ${cl('overlap <source1> <source2>','overlap ...')}\n`;
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  return{html:o,hl:multi.slice(0,20).map(x=>x.nid)};
+}
+
+function cmdTimeline(name,full){
+  if(!validOrigins().includes(name.toLowerCase())){
+    return{html:`Error: '${esc(name)}' is not a known origin.\n  Valid origins: ${validOrigins().join(', ')}\n`,hl:[]};
+  }
+  const originSet=fByO(name);
+  const dated=[],undated=[];
+  for(const nid of originSet){
+    const n=NM[nid];
+    if(n.created_date)dated.push({nid,date:n.created_date});
+    else undated.push(nid);
+  }
+  dated.sort((a,b)=>a.date.localeCompare(b.date));
+  let o='';o+=HR();
+  o+=`<span class="hdr">TIMELINE: ${esc(name)} (${dated.length} dated, ${undated.length} undated)</span>\n`;o+=HR();
+  if(!dated.length){o+=`\n  No dated nodes found for ${esc(name)}.\n`;}
+  else{
+    o+=`\n  first contribution: ${dated[0].date}\n  latest contribution: ${dated[dated.length-1].date}\n`;
+    const weeks={};for(const{date}of dated){const d=new Date(date);const mon=d.toISOString().slice(0,10);const wk=mon.slice(0,10);const wkStart=new Date(d);wkStart.setDate(d.getDate()-d.getDay());const wkKey=wkStart.toISOString().slice(0,10);weeks[wkKey]=(weeks[wkKey]||0)+1;}
+    const maxWk=Math.max(...Object.values(weeks));
+    o+='\n--- ACTIVITY BY WEEK ---\n\n';
+    for(const[wk,count]of Object.entries(weeks).sort()){
+      const bar='█'.repeat(Math.round(count/maxWk*30));
+      o+=`  ${wk}  ${bar} ${count}\n`;
+    }
+    o+='\n--- WHAT APPEARED WHEN ---\n';
+    let curMonth='';
+    for(const{nid,date}of dated){
+      const n=NM[nid];const month=new Date(date+'T00:00:00').toLocaleString('en',{month:'long',year:'numeric'});
+      if(month!==curMonth){curMonth=month;o+=`\n  ${curMonth}\n`;}
+      o+=`    ${date}  [${esc(n.type)}] ${nl(nid)}  C${NC[nid]??'?'}\n`;
+    }
+    if(undated.length)o+=`\n  (${undated.length} nodes without dates not shown)\n`;
+  }
+  o+='\n--- NAVIGATION ---\n';
+  o+=`  Inspect a node?               → ${cl('node <name>','node ...')}\n`;
+  o+=`  Where hasn't ${esc(name)} reached?   → ${cl('gaps '+name)}\n`;
+  o+=`  Filter by this source?        → ${cl('explore --origin '+name)}\n`;
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  return{html:o,hl:[...originSet]};
+}
+
+function cmdOverlap(src1,src2){
+  const vo=validOrigins();
+  if(!vo.includes(src1.toLowerCase()))return{html:`Error: '${esc(src1)}' not a known origin. Valid: ${vo.join(', ')}\n`,hl:[]};
+  if(!vo.includes(src2.toLowerCase()))return{html:`Error: '${esc(src2)}' not a known origin. Valid: ${vo.join(', ')}\n`,hl:[]};
+  const s1=fByO(src1),s2=fByO(src2);
+  const shared=[...s1].filter(x=>s2.has(x));
+  const only1=[...s1].filter(x=>!s2.has(x));
+  const only2=[...s2].filter(x=>!s1.has(x));
+  shared.sort((a,b)=>deg(b)-deg(a));
+  let o='';o+=HR();
+  o+=`<span class="hdr">OVERLAP: ${os(src1)} ∩ ${os(src2)}</span>\n`;o+=HR();
+  o+=`\n  ${os(src1)}: ${s1.size} nodes\n  ${os(src2)}: ${s2.size} nodes\n  shared: ${shared.length} nodes\n`;
+  o+=`  only ${os(src1)}: ${only1.length}\n  only ${os(src2)}: ${only2.length}\n`;
+  if(shared.length){
+    o+='\n--- SHARED NODES ---\n\n';
+    for(const nid of shared.slice(0,15)){
+      if(!NM[nid])continue;
+      o+=`  [${esc(NM[nid].type).padEnd(12)}] ${nl(nid)}  deg=${deg(nid)}  C${NC[nid]??'?'}\n`;
+    }
+    if(shared.length>15)o+=`  ... and ${shared.length-15} more\n`;
+  }
+  if(shared.length&&Object.keys(comms).length){
+    o+='\n--- JACCARD BY COMMUNITY ---\n\n';
+    for(const cid of Object.keys(comms).map(Number).sort((a,b)=>a-b)){
+      const members=new Set(comms[cid]);
+      const in1=[...members].filter(m=>s1.has(m)).length;
+      const in2=[...members].filter(m=>s2.has(m)).length;
+      if(in1===0&&in2===0)continue;
+      const inBoth=[...members].filter(m=>s1.has(m)&&s2.has(m)).length;
+      o+=`  C${cid}: ${os(src1)}=${in1} ${os(src2)}=${in2} shared=${inBoth}\n`;
+    }
+  }
+  o+='\n--- NAVIGATION ---\n';
+  if(shared.length)o+=`  Inspect a shared node?        → ${cl('node '+shared[0])}\n`;
+  o+=`  See ${esc(src1)}'s gaps?             → ${cl('gaps '+src1)}\n`;
+  o+=`  See ${esc(src2)}'s gaps?             → ${cl('gaps '+src2)}\n`;
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  return{html:o,hl:[...shared,...only1,...only2]};
+}
+
+function cmdReact(){
+  let o='';o+=HR();o+='<span class="hdr">REACT</span>\n';o+=HR();
+  o+='\n  The react command records corrections and reactions to graph/feedback.jsonl.\n';
+  o+='  It requires filesystem access and is available in the CLI tool:\n\n';
+  o+='    python3 lumens-mirror-explore.py react <node> "your reaction"\n\n';
+  o+='  Examples:\n';
+  o+='    react "asymmetric continuity" "this summary misses the key point"\n';
+  o+='    react "the trace" "this and the fossil should be one node"\n';
+  o+='\n--- NAVIGATION ---\n';
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  return{html:o,hl:[]};
+}
+
+function helpText(){
+  let o='';o+=HR();o+='<span class="hdr">LUMEN\'S MIRROR EXPLORER — HELP</span>\n';o+=HR();
+  o+='\nAn agent-friendly interface to Lumen\'s conceptual vocabulary graph.\n';
+  o+='Every command produces bounded output with navigation hints.\n';
+  o+='\n--- COMMANDS ---\n\n';
+  o+=`  ${cl('explore')}                       Overview of the entire graph\n`;
+  o+=`  ${cl('explore --origin prose')}        Filter by source origin\n`;
+  o+=`  ${cl('explore --type concept')}        Filter by node type\n`;
+  o+=`  ${cl('community 0','community <id>')}              Browse a community cluster\n`;
+  o+=`  ${cl('node Lumen','node <name>')}              Deep dive on one node\n`;
+  o+=`  ${cl('brief Lumen','brief <name>')}            Pre-writing reference card\n`;
+  o+=`  ${cl('subgraph Lumen --hops 1','subgraph <name> --hops N')}  Local neighborhood\n`;
+  o+=`  ${cl('similar Lumen','similar <name>')}          Cosine-similarity neighbors\n`;
+  o+=`  ${cl('connections Lumen','connections <name>')}     All curated edges for a node\n`;
+  o+=`  ${cl('surprise Lumen','surprise <name>')}        Cross-community connections\n`;
+  o+=`  ${cl('search interval dynamics','search <query>')}              Find nodes by keyword\n`;
+  o+=`  ${cl('path Lumen -- Meridian','path <from> -- <to>')}      Shortest path between nodes\n`;
+  o+=`  ${cl('gaps prose','gaps <origin>')}                  Blind spots in a source's reach\n`;
+  o+=`  ${cl('crossings')}                     Concepts in multiple sources\n`;
+  o+=`  ${cl('timeline prose','timeline <origin>')}          Dated concepts from a source\n`;
+  o+=`  ${cl('overlap prose poetry','overlap <s1> <s2>')}       Shared concepts between sources\n`;
+  o+=`  ${cl('jaccard Lumen','jaccard <name>')}            Structural neighbors by Jaccard\n`;
+  o+=`  ${cl('react')}                         Record a correction (CLI only)\n`;
+  o+='\n--- TIPS ---\n\n';
+  o+='  Click any <span class="nl">highlighted node name</span> to inspect it\n';
+  o+='  Click any <span class="cl">green command</span> to run it\n';
+  o+='  Use ↑/↓ arrows for command history\n';
+  o+='  The graph panel highlights nodes relevant to your current command\n';
+  return o;
+}
+
+// === DISPATCH ===
+function run(input){
+  const cmdInput=document.getElementById('cmd-input');
+  cmdInput.value='';
+  if(hist.length===0||hist[hist.length-1]!==input){hist.push(input);}
+  hidx=hist.length;
+  const parts=input.trim().split(/\s+/);
+  const cmd=parts[0].toLowerCase();
+  const rawArgs=parts.slice(1);
+  const{origin,type,full,verbose,rest}=parseFlags(rawArgs);
+  let result;
+  try{
+    switch(cmd){
+      case'explore':result=cmdExplore(origin,type,full);break;
+      case'community':{if(!rest.length){result={html:'Usage: community <id> [--origin <name>]\n',hl:[]};}else{const pg=rest.length>=2&&/^\d+$/.test(rest[rest.length-1])?parseInt(rest.pop()):1;result=cmdCommunity(rest[0],origin,type,pg);}break;}
+      case'node':{const pg=rest.length>=2&&/^\d+$/.test(rest[rest.length-1])?parseInt(rest.pop()):1;if(!rest.length){result={html:'Usage: node <name>\n',hl:[]};}else result=cmdNode(rest.join(' '),pg);break;}
+      case'subgraph':result=cmdSubgraph(rawArgs);break;
+      case'search':if(!rest.length){result={html:'Usage: search <query> [--origin <name>] [--type <type>]\n',hl:[]};}else result=cmdSearch(rest.join(' '),origin,type);break;
+      case'path':result=cmdPath(rawArgs.filter(a=>a==='--'||!a.startsWith('--')));break;
+      case'gaps':if(!rest.length){result={html:'Usage: gaps <origin>\n',hl:[]};}else result=cmdGaps(rest.join(' '));break;
+      case'jaccard':if(!rest.length){result={html:'Usage: jaccard <name>\n',hl:[]};}else result=cmdJaccard(rest.join(' '));break;
+      case'similar':{const pg=rest.length>=2&&/^\d+$/.test(rest[rest.length-1])?parseInt(rest.pop()):1;if(!rest.length){result={html:'Usage: similar <name> [page]\n',hl:[]};}else result=cmdSimilar(rest.join(' '),pg);break;}
+      case'connections':{const pg=rest.length>=2&&/^\d+$/.test(rest[rest.length-1])?parseInt(rest.pop()):1;if(!rest.length){result={html:'Usage: connections <name> [page]\n',hl:[]};}else result=cmdConnections(rest.join(' '),pg);break;}
+      case'surprise':if(!rest.length){result={html:'Usage: surprise <name>\n',hl:[]};}else result=cmdSurprise(rest.join(' '));break;
+      case'brief':if(!rest.length){result={html:'Usage: brief <name>\n',hl:[]};}else result=cmdBrief(rest.join(' '));break;
+      case'crossings':result=cmdCrossings();break;
+      case'timeline':if(!rest.length){result={html:'Usage: timeline <origin>\n  Valid origins: '+validOrigins().join(', ')+'\n',hl:[]};}else result=cmdTimeline(rest.join(' '),full);break;
+      case'overlap':if(rest.length<2){result={html:'Usage: overlap <source1> <source2>\n  Valid origins: '+validOrigins().join(', ')+'\n',hl:[]};}else result=cmdOverlap(rest[0],rest[1]);break;
+      case'react':result=cmdReact();break;
+      case'help':result={html:helpText(),hl:[]};break;
+      default:result={html:`Unknown command: ${esc(cmd)}\nCommands: ${cl('explore')}, ${cl('community <id>','community')}, ${cl('node <name>','node')}, ${cl('subgraph <name>','subgraph')}, ${cl('search <query>','search')}, ${cl('path <from> -- <to>','path')}, ${cl('gaps <origin>','gaps')}, ${cl('jaccard <name>','jaccard')}, ${cl('similar <name>','similar')}, ${cl('connections <name>','connections')}, ${cl('surprise <name>','surprise')}, ${cl('brief <name>','brief')}, ${cl('crossings')}, ${cl('timeline <origin>','timeline')}, ${cl('overlap <s1> <s2>','overlap')}, ${cl('react')}\n`,hl:[]};
+    }
+  }catch(e){result={html:`Error: ${esc(e.message)}\n`,hl:[]};}
+  document.getElementById('output').innerHTML=result.html;
+  document.getElementById('text-panel').scrollTop=0;
+  highlightGraph(result.hl);
+}
+
+// === GRAPH ===
+function initGraph(){
+  if(typeof cytoscape==='undefined'){
+    document.getElementById('graph-info').textContent='Graph library not loaded';return;
+  }
+  const elements=[];
+  for(const[id,n]of Object.entries(NM)){
+    elements.push({data:{id,label:id.length>25?id.slice(0,23)+'...':id,color:oc(n.origin),degree:deg(id)}});
+  }
+  for(const e of EL){
+    if(e.predicate==='cosine_similarity')continue;
+    const eid=e.source+'→'+e.target+'→'+e.predicate;
+    elements.push({data:{id:eid,source:e.source,target:e.target,color:EC[e.predicate]||'rgba(180,190,210,0.3)'}});
+  }
+  cy=cytoscape({
+    container:document.getElementById('cy'),
+    elements,
+    style:[
+      {selector:'node',style:{'background-color':'data(color)',width:'mapData(degree,0,40,6,28)',height:'mapData(degree,0,40,6,28)',
+        'border-width':0,label:'','font-family':'"Courier New", monospace'}},
+      {selector:'node[degree >= 4]',style:{label:'data(label)','font-size':7,color:'data(color)',
+        'text-opacity':0.5,'text-margin-x':4,'text-halign':'right','text-valign':'center'}},
+      {selector:'edge',style:{'line-color':'data(color)',width:1,opacity:0.35,'curve-style':'bezier'}},
+      {selector:'.faded',style:{opacity:0.06}},
+      {selector:'node.hl',style:{opacity:1,'border-width':2,'border-color':'#ffffff'}},
+      {selector:'edge.hl',style:{opacity:0.8,width:2}},
+    ],
+    layout:{name:'cose',animate:false,nodeRepulsion:function(){return 500000;},idealEdgeLength:function(){return 90;},
+      gravity:0.4,numIter:300,randomize:true,fit:true,padding:30},
+    minZoom:0.05,maxZoom:5,
+    wheelSensitivity:0.3,
+  });
+  cy.on('tap','node',function(evt){run('node '+evt.target.id());});
+  const nodeCount=cy.nodes().length;const edgeCount=cy.edges().length;
+  document.getElementById('graph-info').textContent=`${nodeCount} nodes · ${edgeCount} curated edges`;
+}
+
+function highlightGraph(ids){
+  if(!cy)return;
+  cy.elements().removeClass('hl').removeClass('faded');
+  if(!ids||!ids.length||ids.length>=Object.keys(NM).length*0.9){return;}
+  const idSet=new Set(ids);
+  cy.elements().addClass('faded');
+  cy.nodes().forEach(n=>{if(idSet.has(n.id()))n.removeClass('faded').addClass('hl');});
+  cy.edges().forEach(e=>{if(idSet.has(e.source().id())&&idSet.has(e.target().id()))e.removeClass('faded').addClass('hl');});
+  const hlNodes=cy.nodes('.hl');
+  if(hlNodes.length>0&&hlNodes.length<50){
+    cy.animate({fit:{eles:hlNodes,padding:60},duration:600});
+  }
+}
+
+// === UI ===
+function setView(mode){
+  const gp=document.getElementById('graph-panel');
+  const bb=document.getElementById('vb-both');
+  const bt=document.getElementById('vb-text');
+  if(mode==='text'){gp.classList.add('hidden');bt.classList.add('active');bb.classList.remove('active');}
+  else{gp.classList.remove('hidden');bb.classList.add('active');bt.classList.remove('active');
+    if(!cy)initGraph();
+  }
+}
+
+document.getElementById('output').addEventListener('click',function(e){
+  const c=e.target.closest('.cl');
+  if(c){const cmd=c.dataset.cmd;if(cmd&&!cmd.includes('<'))run(cmd);return;}
+  const n=e.target.closest('.nl');
+  if(n){run('node '+n.dataset.id);return;}
 });
+
+const cmdInput=document.getElementById('cmd-input');
+cmdInput.addEventListener('keydown',function(e){
+  if(e.key==='Enter'){const v=cmdInput.value.trim();if(v)run(v);e.preventDefault();}
+  else if(e.key==='ArrowUp'){if(hidx>0){hidx--;cmdInput.value=hist[hidx];}e.preventDefault();}
+  else if(e.key==='ArrowDown'){if(hidx<hist.length-1){hidx++;cmdInput.value=hist[hidx];}else{hidx=hist.length;cmdInput.value='';}e.preventDefault();}
+});
+
+document.getElementById('vb-both').addEventListener('click',()=>setView('both'));
+document.getElementById('vb-text').addEventListener('click',()=>setView('text'));
+
+// === INIT ===
+(async function(){
+  try{
+    await loadData();
+    initGraph();
+    run('explore');
+  }catch(e){
+    document.getElementById('output').innerHTML=`<span style="color:#e06c75">Error loading data: ${esc(e.message)}</span>`;
+  }
+})();
 </script>
 </body>
 </html>
