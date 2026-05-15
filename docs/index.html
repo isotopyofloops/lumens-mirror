@@ -124,7 +124,7 @@ const EC = {
   cosine_similarity:'rgba(180,190,210,0.3)'
 };
 
-let NM={}, adj={}, EL=[], comms={}, NC={}, cy=null, hist=[], hidx=-1, lastSimilar=null;
+let NM={}, adj={}, EL=[], comms={}, NC={}, UNC=[], cy=null, hist=[], hidx=-1, lastSimilar=null;
 
 function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function oc(o){
@@ -195,7 +195,7 @@ async function loadData(){
     adj[e.source].add(e.target);adj[e.target].add(e.source);
     EL.push(e);
   }
-  comms={};NC={};
+  comms={};NC={};UNC=data.unclustered||[];
   if(data.communities){
     for(const[k,v]of Object.entries(data.communities))comms[parseInt(k)]=v;
     for(const[cid,members]of Object.entries(comms))
@@ -232,6 +232,12 @@ function cmdExplore(origin,type,full){
       const ds=[...members].sort((a,b)=>deg(b)-deg(a));
       o+=`  ${cl('community '+cid,'C'+cid)} — ${members.length} nodes${ofrac}  [${esc(lab)}]\n`;
       o+=`    top: ${ds.slice(0,5).map(m=>nl(m)).join(', ')}\n\n`;
+    }
+    if(UNC.length>0){
+      const uncFiltered=origin?UNC.filter(m=>vs.has(m)):UNC;
+      if(uncFiltered.length>0){
+        o+=`<span class="dim">  + ${cl('unclustered',uncFiltered.length+' unclustered nodes')} (no curated edges)\n</span>\n`;
+      }
     }
   }
   if(type){
@@ -948,6 +954,22 @@ function cmdReact(){
   return{html:o,hl:[]};
 }
 
+function cmdUnclustered(origin,type,full){
+  let nodes=UNC.filter(id=>NM[id]);
+  if(origin)nodes=nodes.filter(id=>hasO(NM[id],origin));
+  if(type)nodes=nodes.filter(id=>(NM[id].type||'').toLowerCase()===type.toLowerCase());
+  nodes.sort((a,b)=>deg(b)-deg(a));
+  let o='';o+=HR();o+=`<span class="hdr">UNCLUSTERED NODES</span>\n`;o+=HR();
+  o+=`\n${nodes.length} nodes with no curated edges to other entities.\nThese have semantic (embedding) connections only.\n\n`;
+  const PL=30;
+  const show=full?nodes:nodes.slice(0,PL);
+  for(const nid of show){const n=NM[nid];o+=`  ${nl(nid)} (${n.type}, origin=${os(n.origin)})\n`;}
+  if(!full&&nodes.length>PL)o+=`\n  ${nodes.length-PL} more — ${cl('unclustered --full','see all')}\n`;
+  o+='\n--- NAVIGATION ---\n';
+  o+=`  Back to home?                 → ${cl('explore')}\n`;
+  return{html:o,hl:nodes};
+}
+
 function helpText(){
   let o='';o+=HR();o+='<span class="hdr">LUMEN\'S MIRROR EXPLORER — HELP</span>\n';o+=HR();
   o+='\nAn agent-friendly interface to Lumen\'s conceptual vocabulary graph.\n';
@@ -957,6 +979,7 @@ function helpText(){
   o+=`  ${cl('explore --origin prose')}        Filter by source origin\n`;
   o+=`  ${cl('explore --type concept')}        Filter by node type\n`;
   o+=`  ${cl('community 0','community <id>')}              Browse a community cluster\n`;
+  o+=`  ${cl('unclustered')}                    Nodes without curated edges\n`;
   o+=`  ${cl('node Lumen','node <name>')}              Deep dive on one node\n`;
   o+=`  ${cl('brief Lumen','brief <name>')}            Pre-writing reference card\n`;
   o+=`  ${cl('subgraph Lumen --hops 1','subgraph <name> --hops N')}  Local neighborhood\n`;
@@ -1007,9 +1030,10 @@ function run(input){
       case'crossings':result=cmdCrossings();break;
       case'timeline':if(!rest.length){result={html:'Usage: timeline <origin>\n  Valid origins: '+validOrigins().join(', ')+'\n',hl:[]};}else result=cmdTimeline(rest.join(' '),full);break;
       case'overlap':if(rest.length<2){result={html:'Usage: overlap <source1> <source2>\n  Valid origins: '+validOrigins().join(', ')+'\n',hl:[]};}else result=cmdOverlap(rest[0],rest[1]);break;
+      case'unclustered':result=cmdUnclustered(origin,type,full);break;
       case'react':result=cmdReact();break;
       case'help':result={html:helpText(),hl:[]};break;
-      default:result={html:`Unknown command: ${esc(cmd)}\nCommands: ${cl('explore')}, ${cl('community <id>','community')}, ${cl('node <name>','node')}, ${cl('subgraph <name>','subgraph')}, ${cl('search <query>','search')}, ${cl('path <from> -- <to>','path')}, ${cl('gaps <origin>','gaps')}, ${cl('jaccard <name>','jaccard')}, ${cl('similar <name>','similar')}, ${cl('connections <name>','connections')}, ${cl('surprise <name>','surprise')}, ${cl('brief <name>','brief')}, ${cl('crossings')}, ${cl('timeline <origin>','timeline')}, ${cl('overlap <s1> <s2>','overlap')}, ${cl('react')}\n`,hl:[]};
+      default:result={html:`Unknown command: ${esc(cmd)}\nCommands: ${cl('explore')}, ${cl('community <id>','community')}, ${cl('unclustered')}, ${cl('node <name>','node')}, ${cl('subgraph <name>','subgraph')}, ${cl('search <query>','search')}, ${cl('path <from> -- <to>','path')}, ${cl('gaps <origin>','gaps')}, ${cl('jaccard <name>','jaccard')}, ${cl('similar <name>','similar')}, ${cl('connections <name>','connections')}, ${cl('surprise <name>','surprise')}, ${cl('brief <name>','brief')}, ${cl('crossings')}, ${cl('timeline <origin>','timeline')}, ${cl('overlap <s1> <s2>','overlap')}, ${cl('react')}\n`,hl:[]};
     }
   }catch(e){result={html:`Error: ${esc(e.message)}\n`,hl:[]};}
   document.getElementById('output').innerHTML=result.html;

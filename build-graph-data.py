@@ -27,6 +27,7 @@ GITHUB_BASE = "https://github.com/isotopyofloops/connection-sources/blob/main/lu
 
 SIMILARITY_THRESHOLD = 0.70
 TOP_NEIGHBORS = 8
+MIN_COMMUNITY_SIZE = 2
 
 ORIGIN_MAP = {
     "poetry": "poetry",
@@ -195,12 +196,19 @@ def main():
     community_members = defaultdict(list)
     for nid, label in labels.items():
         community_members[label].append(nid)
-    ranked = sorted(community_members.items(), key=lambda x: -len(x[1]))
+
+    clustered = {k: v for k, v in community_members.items() if len(v) >= MIN_COMMUNITY_SIZE}
+    unclustered = [nid for k, v in community_members.items() if len(v) < MIN_COMMUNITY_SIZE for nid in v]
+
+    ranked = sorted(clustered.items(), key=lambda x: -len(x[1]))
     remap = {old_id: new_id for new_id, (old_id, _) in enumerate(ranked)}
 
     communities = {}
-    for old_id, members in community_members.items():
+    for old_id, members in clustered.items():
         communities[str(remap[old_id])] = members
+
+    if unclustered:
+        print(f"  Unclustered nodes (community size < {MIN_COMMUNITY_SIZE}): {len(unclustered)}")
 
     # Build nodes in Ael-compatible format
     nodes = []
@@ -223,6 +231,7 @@ def main():
         "nodes": nodes,
         "edges": edges,
         "communities": communities,
+        "unclustered": unclustered,
     }
 
     os.makedirs(DOCS, exist_ok=True)
