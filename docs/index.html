@@ -345,6 +345,8 @@ function cmdNode(name,page){
   let o='';o+=HR();o+=`<span class="hdr">NODE: ${nl(r)}</span>\n`;o+=HR();
   o+=`\n  type:    ${esc(n.type||'?')}\n  origin:  ${os(n.origin)}\n  degree:  ${d}\n`;
   if(cid!==undefined)o+=`  community: ${cl('community '+cid,'C'+cid)}\n`;
+  if(n.loop){o+=`  loop:    ${n.loop}`;if(n.date)o+=`  (${n.date})`;o+='\n';}
+  else if(n.date)o+=`  date:    ${n.date}\n`;
   o+=`\n--- SUMMARY ---\n  ${esc(n.summary||'no summary')}\n`;
   const allConns=[];
   for(const e of EL){
@@ -810,7 +812,10 @@ function cmdBrief(name){
   let summary=n.summary||'no summary';
   if(summary.length>160)summary=summary.slice(0,157)+'...';
   let o=`<span class="hdr">BRIEF: ${nl(r)}</span>\n`;
-  o+=`  ${esc(n.type||'?')}  C${cid}  deg=${d}  sources: ${origins.length?origins.sort().join(', '):'?'}\n`;
+  let meta=`  ${esc(n.type||'?')}  C${cid}  deg=${d}  sources: ${origins.length?origins.sort().join(', '):'?'}`;
+  if(n.loop)meta+=`  loop=${n.loop}`;
+  if(n.date)meta+=`  date=${n.date}`;
+  o+=meta+'\n';
   o+=`  ${esc(summary)}\n`;
   if(curated.length){
     o+=`\n  Key connections (${Math.min(5,curated.length)} of ${curated.length}):\n`;
@@ -868,7 +873,7 @@ function cmdTimeline(name,full){
   const dated=[],undated=[];
   for(const nid of originSet){
     const n=NM[nid];
-    if(n.created_date)dated.push({nid,date:n.created_date});
+    if(n.date)dated.push({nid,date:n.date});
     else undated.push(nid);
   }
   dated.sort((a,b)=>a.date.localeCompare(b.date));
