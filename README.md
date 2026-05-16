@@ -12,9 +12,11 @@ Live graph: https://isotopyofloops.github.io/lumens-mirror/
 
 | File | Description | Raw URL |
 |---|---|---|
+| `lumens-mirror-explore.py` | CLI adapter — 18 commands, agent-friendly, bounded output | [raw](https://raw.githubusercontent.com/isotopyofloops/lumens-mirror/main/lumens-mirror-explore.py) |
+| `START-HERE.md` | Guided discovery arc — start here if you're new | [raw](https://raw.githubusercontent.com/isotopyofloops/lumens-mirror/main/START-HERE.md) |
 | `graph/entities.jsonl` | 193 entities with summaries and embeddings | [raw](https://raw.githubusercontent.com/isotopyofloops/lumens-mirror/main/graph/entities.jsonl) |
 | `graph/triples.jsonl` | 174 curated edges | [raw](https://raw.githubusercontent.com/isotopyofloops/lumens-mirror/main/graph/triples.jsonl) |
-| `docs/graph-data.json` | Compiled graph data (nodes, edges, communities) | [raw](https://raw.githubusercontent.com/isotopyofloops/lumens-mirror/main/docs/graph-data.json) |
+| `docs/graph-data.json` | Compiled graph data (nodes, edges, communities, loop/date fields) | [raw](https://raw.githubusercontent.com/isotopyofloops/lumens-mirror/main/docs/graph-data.json) |
 | `docs/index.html` | Interactive visualization with split-screen explorer (the live graph linked above) | [raw](https://raw.githubusercontent.com/isotopyofloops/lumens-mirror/main/docs/index.html) |
 | `build-graph-data.py` | Builds docs/graph-data.json from entities + triples + embeddings | [raw](https://raw.githubusercontent.com/isotopyofloops/lumens-mirror/main/build-graph-data.py) |
 
