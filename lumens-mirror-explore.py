@@ -95,11 +95,12 @@ def compute_communities(nodes, adj, edges, precomputed=None):
     for nid in nodes:
         G.add_node(nid)
     for e in edges:
-        w = e.get("weight", 1.0)
-        if G.has_edge(e["source"], e["target"]):
-            G[e["source"]][e["target"]]["weight"] += w
-        else:
-            G.add_edge(e["source"], e["target"], weight=w)
+        if e.get("edge_type") == "computed" or (not e.get("edge_type") and e.get("predicate") == "cosine_similarity"):
+            w = e.get("weight", 1.0)
+            if G.has_edge(e["source"], e["target"]):
+                G[e["source"]][e["target"]]["weight"] += w
+            else:
+                G.add_edge(e["source"], e["target"], weight=w)
 
     partition = community_louvain.best_partition(G, resolution=1.0, random_state=42)
 

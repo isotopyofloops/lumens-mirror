@@ -226,10 +226,10 @@ def main():
     print(f"  Semantic edges (>={SIMILARITY_THRESHOLD}): {added}")
     print(f"  Total edges: {len(edges)}")
 
-    # Community detection (curated edges only)
+    # Community detection (computed edges only — curated edges don't encode proximity)
     adj = defaultdict(set)
     for e in edges:
-        if e.get("predicate") == "cosine_similarity":
+        if e.get("predicate") != "cosine_similarity":
             continue
         adj[e["source"]].add(e["target"])
         adj[e["target"]].add(e["source"])
