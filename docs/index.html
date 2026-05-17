@@ -752,7 +752,7 @@ function cmdSurprise(name){
   const cid=NC[r]??'?';
   let o='';o+=HR();o+=`<span class="hdr">SURPRISE: ${nl(r)}</span>\n`;o+=HR();
   o+=`\n  node: ${nl(r)} (${esc(NM[r].type||'?')}, C${cid})\n`;
-  const summ=NM[r].summary;if(summ)o+=`  ${esc(summ.length>120?summ.slice(0,117)+'...':summ)}\n`;
+  const summ=NM[r].summary;if(summ)o+=`  ${esc(summ)}\n`;
   o+=`  curated neighbors: ${Object.keys(curatedNb).length}\n`;
   o+=`  with similarity score: ${withSim.length}\n`;
   if(withSim.length){
@@ -761,7 +761,7 @@ function cmdSurprise(name){
       if(!NM[nb])continue;
       const ncid=NC[nb]??'?';
       o+=`  ${s.toFixed(3)}  [${esc(NM[nb].type)}] ${nl(nb)}  C${ncid}\n`;
-      const nbs=NM[nb].summary;if(nbs)o+=`         ${esc(nbs.length>100?nbs.slice(0,97)+'...':nbs)}\n`;
+      const nbs=NM[nb].summary;if(nbs)o+=`         ${esc(nbs)}\n`;
       for(const p of preds.slice(0,3))o+=`         ${esc(p)}\n`;
     }
   }else{
@@ -773,7 +773,7 @@ function cmdSurprise(name){
     for(const{nid,s}of highSimNoEdge.slice(0,10)){
       if(!NM[nid])continue;
       o+=`  ${s.toFixed(3)}  [${esc(NM[nid].type)}] ${nl(nid)}  C${NC[nid]??'?'}\n`;
-      const hss=NM[nid].summary;if(hss)o+=`         ${esc(hss.length>100?hss.slice(0,97)+'...':hss)}\n`;
+      const hss=NM[nid].summary;if(hss)o+=`         ${esc(hss)}\n`;
     }
   }
   o+='\n--- NAVIGATION ---\n';
