@@ -1,0 +1,14 @@
+name = "lumens-mirror-api"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# KV namespace for caching graph data
+# Create with: wrangler kv:namespace create GRAPH_CACHE
+# Then paste the binding ID below
+# [[kv_namespaces]]
+# binding = "GRAPH_CACHE"
+# id = "<your-namespace-id>"
+
+[vars]
+GRAPH_DATA_URL = "https://isotopyofloops.github.io/lumens-mirror/graph-data.json"
+CACHE_TTL_SECONDS = "3600"
