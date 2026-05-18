@@ -107,7 +107,9 @@ export default {
         const rTgt = resolve(graph, tgt);
         if (!rSrc) return text(`Error: node '${src}' not found.\n`, 404);
         if (!rTgt) return text(`Error: node '${tgt}' not found.\n`, 404);
-        return text(cmdPath(graph, rSrc, rTgt));
+        return format === "json"
+          ? json(cmdPathJSON(graph, rSrc, rTgt))
+          : text(cmdPath(graph, rSrc, rTgt));
       }
 
       const briefMatch = path.match(/^\/brief\/(.+)$/);
@@ -115,7 +117,9 @@ export default {
         const name = decodeURIComponent(briefMatch[1]);
         const resolved = resolve(graph, name);
         if (!resolved) return text(`Error: node '${name}' not found.\n`, 404);
-        return text(cmdBrief(graph, resolved));
+        return format === "json"
+          ? json(cmdBriefJSON(graph, resolved))
+          : text(cmdBrief(graph, resolved));
       }
 
       return text(cmdHelp(), 404);
@@ -754,6 +758,60 @@ function cmdBrief(graph, nid) {
   if (neighbors.length) lines.push(`  /path/${encodeURIComponent(nid)}/${encodeURIComponent(neighbors[0])}`);
 
   return lines.join("\n");
+}
+
+function cmdBriefJSON(graph, nid) {
+  const { nodes, adj, edges, nodeCommunity } = graph;
+  const n = nodes[nid];
+  const neighbors = [...(adj[nid] || [])].sort((a, b) => deg(graph, b) - deg(graph, a));
+  const neighborEdges = neighbors.slice(0, 8).map((nb) => {
+    const e = edges.find(
+      (e) => (e.source === nid && e.target === nb) || (e.source === nb && e.target === nid)
+    );
+    return { id: nb, predicate: e?.predicate, direction: e?.source === nid ? "outgoing" : "incoming" };
+  });
+  const simEdges = edges
+    .filter((e) => e.predicate === "cosine_similarity" && (e.source === nid || e.target === nid))
+    .sort((a, b) => (b.weight || 0) - (a.weight || 0));
+  const similar = simEdges.slice(0, 5).map((e) => {
+    const other = e.source === nid ? e.target : e.source;
+    return { id: other, weight: e.weight };
+  });
+  return {
+    id: nid, type: n.type, origin: n.origin, summary: n.summary,
+    community: nodeCommunity[nid], degree: deg(graph, nid),
+    connections: neighborEdges, most_similar: similar,
+  };
+}
+
+function cmdPathJSON(graph, src, tgt) {
+  const { nodes, adj, edges, nodeCommunity } = graph;
+  const visited = new Set([src]);
+  const queue = [[src, [src]]];
+  let path = null;
+  while (queue.length) {
+    const [current, currentPath] = queue.shift();
+    if (current === tgt) { path = currentPath; break; }
+    for (const nb of adj[current] || []) {
+      if (!visited.has(nb)) {
+        visited.add(nb);
+        queue.push([nb, [...currentPath, nb]]);
+      }
+    }
+  }
+  if (!path) return { source: src, target: tgt, path: null, length: null };
+  const steps = path.map((step, i) => {
+    const result = { id: step, community: nodeCommunity[step], degree: deg(graph, step) };
+    if (i < path.length - 1) {
+      const next = path[i + 1];
+      const edge = edges.find(
+        (e) => (e.source === step && e.target === next) || (e.source === next && e.target === step)
+      );
+      if (edge) result.edge_to_next = edge.predicate || "related_to";
+    }
+    return result;
+  });
+  return { source: src, target: tgt, length: path.length - 1, steps };
 }
 
 function cmdCrossings(graph) {
