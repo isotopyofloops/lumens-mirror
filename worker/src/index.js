@@ -192,6 +192,13 @@ function deg(graph, nid) {
   return graph.adj[nid] ? graph.adj[nid].size : 0;
 }
 
+function truncSummary(s, maxLen = 120) {
+  if (!s) return "";
+  const firstSentence = s.match(/^[^.!?]+[.!?]/);
+  const short = firstSentence ? firstSentence[0] : s;
+  return short.length > maxLen ? short.slice(0, maxLen - 3) + "..." : short;
+}
+
 function originList(n) {
   const o = n.origin || "";
   if (Array.isArray(o)) return o.map((x) => x.toLowerCase());
@@ -360,7 +367,7 @@ function cmdNode(graph, nid) {
   for (const [pred, items] of Object.entries(byPred).sort()) {
     lines.push(`  [${pred}]`);
     for (const { target, dir, weight } of items.slice(0, 12)) {
-      const summ = nodes[target]?.summary || "";
+      const summ = truncSummary(nodes[target]?.summary);
       const wStr = weight ? ` (${weight.toFixed(3)})` : "";
       lines.push(`    ${dir} ${target}${wStr}`);
       if (summ) lines.push(`        ${summ}`);
@@ -417,8 +424,9 @@ function cmdCommunity(graph, cid) {
 
   for (const m of [...members].sort((a, b) => deg(graph, b) - deg(graph, a))) {
     if (!nodes[m]) continue;
-    const summ = nodes[m].summary ? `  — ${nodes[m].summary}` : "";
-    lines.push(`  ${m} (deg=${deg(graph, m)}, ${originStr(nodes[m])})${summ}`);
+    const summ = truncSummary(nodes[m].summary);
+    const summStr = summ ? `  — ${summ}` : "";
+    lines.push(`  ${m} (deg=${deg(graph, m)}, ${originStr(nodes[m])})${summStr}`);
   }
   lines.push("");
 
@@ -485,8 +493,9 @@ function cmdSearch(graph, query) {
 
   for (const [nid, score] of results.slice(0, 15)) {
     const n = nodes[nid];
-    const summ = n.summary ? `\n    ${n.summary}` : "";
-    lines.push(`  ${nid} (deg=${deg(graph, nid)}, C${graph.nodeCommunity[nid] ?? "?"}, ${originStr(n)})${summ}`);
+    const summ = truncSummary(n.summary);
+    const summStr = summ ? `\n    ${summ}` : "";
+    lines.push(`  ${nid} (deg=${deg(graph, nid)}, C${graph.nodeCommunity[nid] ?? "?"}, ${originStr(n)})${summStr}`);
   }
   if (results.length > 15) lines.push(`\n  ... and ${results.length - 15} more`);
   lines.push("");
@@ -530,7 +539,7 @@ function cmdSimilar(graph, nid, page) {
 
   const lines = [`Similar to: ${nid} (page ${page}, ${targets.length} total)`, ""];
   for (const { id, weight } of pageItems) {
-    const summ = nodes[id]?.summary || "";
+    const summ = truncSummary(nodes[id]?.summary);
     lines.push(`  ${id} (similarity=${weight.toFixed(3)})`);
     if (summ) lines.push(`    ${summ}`);
   }
@@ -594,7 +603,7 @@ function cmdSurprise(graph, nid) {
     lines.push("--- SIMILAR BUT UNCONNECTED ---");
     lines.push("(High cosine similarity, no direct edge — potential missing links)", "");
     for (const { id, weight } of unconnectedSimilar.slice(0, 8)) {
-      const summ = nodes[id]?.summary || "";
+      const summ = truncSummary(nodes[id]?.summary);
       lines.push(`  ${id} (similarity=${weight.toFixed(3)})`);
       if (summ) lines.push(`    ${summ}`);
     }
@@ -605,7 +614,7 @@ function cmdSurprise(graph, nid) {
     lines.push("--- CROSS-COMMUNITY CONNECTIONS ---");
     lines.push("(Direct edges to nodes in different communities)", "");
     for (const { id, community } of crossComm.slice(0, 8)) {
-      const summ = nodes[id]?.summary || "";
+      const summ = truncSummary(nodes[id]?.summary);
       lines.push(`  ${id} (C${community})`);
       if (summ) lines.push(`    ${summ}`);
     }
@@ -686,6 +695,11 @@ function cmdPath(graph, src, tgt) {
       if (edge) lines.push(`       [${edge.predicate || "?"}]`);
     }
   }
+  lines.push("");
+  lines.push("--- TRY ---");
+  lines.push(`  /node/${encodeURIComponent(src)}`);
+  lines.push(`  /node/${encodeURIComponent(tgt)}`);
+  lines.push(`  /surprise/${encodeURIComponent(src)}`);
 
   return lines.join("\n");
 }
@@ -733,6 +747,12 @@ function cmdBrief(graph, nid) {
     lines.push("");
   }
 
+  lines.push("--- TRY ---");
+  lines.push(`  /node/${encodeURIComponent(nid)}`);
+  lines.push(`  /surprise/${encodeURIComponent(nid)}`);
+  lines.push(`  /similar/${encodeURIComponent(nid)}`);
+  if (neighbors.length) lines.push(`  /path/${encodeURIComponent(nid)}/${encodeURIComponent(neighbors[0])}`);
+
   return lines.join("\n");
 }
 
@@ -751,10 +771,16 @@ function cmdCrossings(graph) {
   lines.push(`CROSSINGS — ${multi.length} node(s) spanning multiple sources`);
   lines.push(hr, "");
   for (const { id, origins } of multi.slice(0, 20)) {
-    const summ = nodes[id]?.summary || "";
+    const summ = truncSummary(nodes[id]?.summary);
     lines.push(`  ${id} (origins: ${origins.join("+")}, deg=${deg(graph, id)})`);
     if (summ) lines.push(`    ${summ}`);
   }
+  lines.push("");
+  lines.push("--- TRY ---");
+  if (multi[0]) lines.push(`  /node/${encodeURIComponent(multi[0].id)}`);
+  if (multi[1]) lines.push(`  /node/${encodeURIComponent(multi[1].id)}`);
+  lines.push("  /");
+
   return lines.join("\n");
 }
 
